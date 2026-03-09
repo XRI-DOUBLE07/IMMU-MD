@@ -1,0 +1,124 @@
+{
+  "name": "IMMU MD,
+  "description": "⚡ IMMU MD - Advanced WhatsApp Bot Using Baileys Library with Quantum Core",
+  "repository": "https://github.com/XRI-DOUBLE07/IMMU-MD-",
+  "logo": "https://i.postimg.cc/fynYVyPf/prime.jpg",
+  "stack": "container",
+  "keywords": [
+    "whatsapp-bot",
+    "multi-device", 
+    "bot",
+    "whatsapp",
+    "baileys",
+    "IMMU MD",
+    "quantum-core"
+  ],
+  "env": {
+    "SESSION_ID": {
+      "description": "Add your Session ID here if you want to connect via session download",
+      "required": false,
+      "value": ""
+    },
+    "OWNER_NUMBER": {
+      "description": "List of owner numbers (comma-separated), without '+' sign",
+      "required": true,
+      "value": "923493114170"
+    },
+    "BOT_NAME": {
+      "description": "Display name of your bot",
+      "required": false,
+      "value": "IMMU MD"
+    },
+    "BOT_NUMBER": {
+      "description": "WhatsApp phone number for pairing code (without '+' sign)",
+      "required": true,
+      "value": "923493114170"
+    },
+    "PACKNAME": {
+      "description": "Sticker pack name",
+      "required": false,
+      "value": "⚡ IMMU MD"
+    },
+    "AUTHOR": {
+      "description": "Author name for sticker metadata",
+      "required": false,
+      "value": "💎 IMMU MD"
+    },
+    "PREFIX": {
+      "description": "Allowed command prefixes (comma-separated, no spaces)",
+      "required": true,
+      "value": "⚡,+,!,.,#,$"
+    },
+    "TIME_ZONE": {
+      "description": "Your Time Zone (e.g., Asia/karachi, UTC)",
+      "required": false,
+      "value": "UTC"
+    },
+    "PAIRING_CODE": {
+      "description": "Set to 'false' to disable pairing code method",
+      "required": false,
+      "value": "true"
+    },
+    "ALWAYS_ONLINE": {
+      "description": "Set to 'on' to make the bot always appear online",
+      "required": false,
+      "value": "on"
+    },
+    "IMMU GROUP": {
+      "description": "Immu WhatsApp group link",
+      "required": false,
+      "value": "https://chat.whatsapp.com/JQTH0GwURpjIJEzhpcFosO?mode=hq2tcla"
+    },
+    "MONGODB_URI": {
+      "description": "MongoDB connection string for database (optional)",
+      "required": false,
+      "value": ""
+    },
+    "HKEY": {
+      "description": "Heroku API key - Get one from https://dashboard.heroku.com/account",
+      "required": false,
+      "value": ""
+    },
+    "HAPP": {
+      "description": "Heroku app name (same as the app name above)",
+      "required": false,
+      "value": ""
+    },
+    "API_KEY": {
+      "description": "Prime API key for advanced features",
+      "required": false,
+      "value": ""
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini AI API key for AI features",
+      "required": false,
+      "value": ""
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
+    {
+      "url": "https://github.com/DuckyTeam/heroku-buildpack-imagemagick.git"
+    },
+    {
+      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
+    },
+    {
+      "url": "https://github.com/clhuang/heroku-buildpack-webp-binaries.git"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    }
+  ]
+}
