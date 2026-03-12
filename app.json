@@ -1,4 +1,4 @@
-{
+￼enter {
   "name": "immu-md",
   "description": "⚡ IMMU-MD ULTRA - Advanced WhatsApp Bot Using Baileys Library with Quantum Core",
   "repository": "https://github.com/XRI-DOUBLE07/IMMU-MD",
@@ -109,8 +109,9 @@
     }
   ],
   "formation": {
-  "worker": {
-    "quantity": 1,
-    "size": "basic"
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
   }
-  }
+}
