@@ -1,6 +1,6 @@
 {
-  "name": "IMMU MD,
-  "description": "⚡ IMMU MD - Advanced WhatsApp Bot Using Baileys Library with Quantum Core",
+  "name": " immu-md",
+  "description": "⚡ IMMU-MD ULTRA - Advanced WhatsApp Bot Using Baileys Library with Quantum Core",
   "repository": "https://github.com/XRI-DOUBLE07/IMMU-MD-",
   "logo": "https://i.postimg.cc/fynYVyPf/prime.jpg",
   "stack": "container",
@@ -10,7 +10,7 @@
     "bot",
     "whatsapp",
     "baileys",
-    "IMMU MD",
+    "immu-md",
     "quantum-core"
   ],
   "env": {
@@ -27,7 +27,7 @@
     "BOT_NAME": {
       "description": "Display name of your bot",
       "required": false,
-      "value": "IMMU MD"
+      "value": "IMMU-MD"
     },
     "BOT_NUMBER": {
       "description": "WhatsApp phone number for pairing code (without '+' sign)",
@@ -37,12 +37,12 @@
     "PACKNAME": {
       "description": "Sticker pack name",
       "required": false,
-      "value": "⚡ IMMU MD"
+      "value": "⚡ IMMU-MD"
     },
     "AUTHOR": {
       "description": "Author name for sticker metadata",
       "required": false,
-      "value": "💎 IMMU MD"
+      "value": "💎 IMMU-MD TECHNOLOGIES"
     },
     "PREFIX": {
       "description": "Allowed command prefixes (comma-separated, no spaces)",
@@ -64,10 +64,10 @@
       "required": false,
       "value": "on"
     },
-    "IMMU GROUP": {
-      "description": "Immu WhatsApp group link",
+    "PRIME_GROUP": {
+      "description": "IMMU MD WhatsApp group link",
       "required": false,
-      "value": "https://chat.whatsapp.com/JQTH0GwURpjIJEzhpcFosO?mode=hq2tcla"
+      "value": "https://whatsapp.com/channel/0029Vaq4PRsD38CJKXzwmb42"
     },
     "MONGODB_URI": {
       "description": "MongoDB connection string for database (optional)",
@@ -85,7 +85,7 @@
       "value": ""
     },
     "API_KEY": {
-      "description": "Prime API key for advanced features",
+      "description": "IMMU API key for advanced features",
       "required": false,
       "value": ""
     },
@@ -114,11 +114,4 @@
       "quantity": 1,
       "size": "basic"
     }
-  },
-  "addons": [
-    {
-      "plan": "heroku-postgresql:mini",
-      "as": "DATABASE"
-    }
-  ]
-}
+  }
