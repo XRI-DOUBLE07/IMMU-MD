@@ -109,9 +109,8 @@
     }
   ],
   "formation": {
-    "web": {
-      "quantity": 1,
-      "size": "basic"
-    }
+  "worker": {
+    "quantity": 1,
+    "size": "basic"
   }
-}
+  }
