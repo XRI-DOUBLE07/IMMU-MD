@@ -1,12 +1,11 @@
 {
-  "name": " immu-md",
+  "name": "immu-md",
   "description": "⚡ IMMU-MD ULTRA - Advanced WhatsApp Bot Using Baileys Library with Quantum Core",
-  "repository": "https://github.com/XRI-DOUBLE07/IMMU-MD-",
+  "repository": "https://github.com/XRI-DOUBLE07/IMMU-MD",
   "logo": "https://i.postimg.cc/fynYVyPf/prime.jpg",
-  "stack": "container",
   "keywords": [
     "whatsapp-bot",
-    "multi-device", 
+    "multi-device",
     "bot",
     "whatsapp",
     "baileys",
@@ -75,12 +74,12 @@
       "value": ""
     },
     "HKEY": {
-      "description": "Heroku API key - Get one from https://dashboard.heroku.com/account",
+      "description": "Heroku API key",
       "required": false,
       "value": ""
     },
     "HAPP": {
-      "description": "Heroku app name (same as the app name above)",
+      "description": "Heroku app name",
       "required": false,
       "value": ""
     },
@@ -115,3 +114,4 @@
       "size": "basic"
     }
   }
+}
