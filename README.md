@@ -42,7 +42,7 @@
 </a>
 <br><br>
 <h3 style="color:#ff6bff;">🔑 Step 2: Generate Session ID</h3>
-<a href="https://mafiamdpair-6b21b2f6849b.herokuapp.com/pair" target="_blank">
+<a href="https://immu-md-pair-f84424d17df3.herokuapp.com/" target="_blank">
 <img src="https://img.shields.io/badge/PAIR_SESSION-ff66cc?style=for-the-badge&logo=codechef&logoColor=white&labelColor=1a001a"/>
 </a>
 <br><br>
