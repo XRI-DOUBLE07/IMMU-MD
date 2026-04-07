@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="60" viewBox="0 0 260 60">
+  <defs>
+    <!-- Animated Gradient Background -->
+    <linearGradient id="gradFork" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff512f">
+        <animate attributeName="stop-color" values="#ff512f;#dd2476;#24c6dc;#514a9d;#ff512f" dur="10s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#dd2476">
+        <animate attributeName="stop-color" values="#dd2476;#24c6dc;#514a9d;#ff512f;#dd2476" dur="10s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Button background -->
+  <rect width="260" height="60" rx="15" fill="url(#gradFork)" filter="url(#glow)"/>
+
+  <!-- Animated moving dots (smaller radius + scattered positions) -->
+  <circle cx="20" cy="20" r="2.5" fill="yellow">
+    <animate attributeName="cx" values="20;240;20" dur="8s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="60" cy="38" r="2.5" fill="cyan">
+    <animate attributeName="cx" values="60;240;60" dur="9s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="100" cy="15" r="2.5" fill="lime">
+    <animate attributeName="cx" values="100;240;100" dur="7s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="140" cy="45" r="2.5" fill="orange">
+    <animate attributeName="cx" values="140;240;140" dur="10s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Button Text -->
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+        fill="white" font-size="18" font-weight="bold" font-family="Arial, sans-serif">
+    Fork Repository
+  </text>
+</svg>
