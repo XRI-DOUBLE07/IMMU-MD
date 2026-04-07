@@ -36,7 +36,7 @@ ___
 
 <p align="center">
   <a href="https://dashboard.heroku.com/new?template=https://github.com/XRI-DOUBLE07/IMMU-MD/tree/main">
-    <img src=".Immu/deploy-btn.svg" alt="DEPLOY ON HEROKU" width="260"/>
+    <img src="Immu/deploy-btn.svg" alt="DEPLOY ON HEROKU" width="260"/>
   </a>
 </p>
 
