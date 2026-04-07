@@ -27,7 +27,7 @@ ___
 <h1 align="center"> ᘜᗴT ᑭᗩIᖇ </h1>
 
 <p align="center">
-  <a href="https://adeelultrapair-12542c80ba62.herokuapp.com/">
+  <a href="https://immu-md-pair-f84424d17df3.herokuapp.com/">
     <img src="./Immu/get-session-btn.svg" alt="GET SESSION" width="260"/>
   </a>
 </p>
