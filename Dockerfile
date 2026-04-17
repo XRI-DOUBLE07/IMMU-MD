@@ -13,7 +13,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Clone repo (replace with your actual repo)
-RUN git clone https://github.com/KAMRAN-SMD/DJ /app && \
+RUN git clone https://github.com/XRI-DOUBLE07/IMMU-MD/immu /app && \
     chown -R node:node /app
 
 # Switch to non-root user for security
