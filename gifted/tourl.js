@@ -7,8 +7,7 @@ gmd({
     pattern: "immucdn",
     react: "⬆️",
     category: "uploader",
-    description: "Upload any file to 
-    ImmuCDN",
+    description: "Upload any file to ImmuCDN",
 }, async (from, Gifted, conText) => {
     await handleUpload(from, Gifted, conText, 'immucdn');
 });
