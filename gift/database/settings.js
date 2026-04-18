@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS = {
     BOT_NAME: "𝐈ᴍᴍυ Mᴅ",
     FOOTER: "ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɪᴍᴍᴜ ᴍᴅ ★",
     CAPTION: "©𝟐𝟎𝟐𝟔 𝐈𝐌𝐌𝐔-𝐌𝐃 𝐕𝟐",
-    BOT_PIC: "https://i.postimg.cc/Px2sSHyB/IMG-20260408-WA0004.png",
+    BOT_PIC: "https://i.ibb.co/23qtbQ2q/IMG-20260408-WA0004.png",
     VERSION: packageJson.version || "5.0.0",
     MODE: config.MODE || "public",
     WARN_COUNT: "3",
