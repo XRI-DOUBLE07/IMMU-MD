@@ -423,38 +423,50 @@ async function loadSession() {
             throw new Error("❌ SESSION_ID is missing or invalid");
         }
 
-        let sessionId = config.SESSION_ID;
+        let sessionId = config.SESSION_ID.trim();
         const [headerCheck, b64Check] = sessionId.split('~');
 
         if (headerCheck !== "IMMU-MD" || !b64Check) {
             throw new Error("❌ Invalid session format. Expected 'IMMU-MD~.....'");
         }
 
-        if (!b64Check.startsWith('H4sI')) {
-            const serverUrl = `https://session.giftedtech.co.ke/session/${b64Check}`;
-            const res = await axios.get(serverUrl, { timeout: 15000 });
-            const fetched = (res.data || '').toString().trim();
-            if (!fetched.startsWith('IMMU-MD`')) {
-                throw new Error("❌ Session server returned invalid data");
+        const cleanB64 = b64Check.trim();
+        let sessionData;
+
+        if (cleanB64.startsWith('H4sI')) {
+            // Gzip compressed session
+            const compressedData = Buffer.from(cleanB64, 'base64');
+            sessionData = zlib.gunzipSync(compressedData).toString('utf8');
+        } else {
+            // Plain base64 JSON session (IMMU-MD pair site format)
+            try {
+                const decoded = Buffer.from(cleanB64, 'base64').toString('utf8');
+                JSON.parse(decoded); // validate it's valid JSON
+                sessionData = decoded;
+            } catch (e) {
+                // Try fetching from server as last resort
+                try {
+                    const serverUrl = `https://session.giftedtech.co.ke/session/${cleanB64}`;
+                    const res = await axios.get(serverUrl, { timeout: 15000 });
+                    const fetched = (res.data || '').toString().trim();
+                    if (fetched.startsWith('IMMU-MD~')) {
+                        const [, fetchedB64] = fetched.split('~');
+                        const compressedData = Buffer.from(fetchedB64, 'base64');
+                        sessionData = zlib.gunzipSync(compressedData).toString('utf8');
+                    } else {
+                        throw new Error("❌ Could not decode session");
+                    }
+                } catch (fetchErr) {
+                    throw new Error("❌ Invalid session data: " + fetchErr.message);
+                }
             }
-            sessionId = fetched;
         }
-
-        const [header, b64data] = sessionId.split('~');
-
-        if (header !== "IMMU-MD" || !b64data) {
-            throw new Error("❌ Invalid session format. Expected 'IMMU-MD~.....'");
-        }
-
-        const cleanB64 = b64data.replace('...', '');
-        const compressedData = Buffer.from(cleanB64, 'base64');
-        const decompressedData = zlib.gunzipSync(compressedData);
 
         if (!fs.existsSync(sessionDir)) {
             fs.mkdirSync(sessionDir, { recursive: true });
         }
 
-        fs.writeFileSync(sessionPath, decompressedData, "utf8");
+        fs.writeFileSync(sessionPath, sessionData, "utf8");
         console.log("✅ Session File Loaded");
 
     } catch (e) {
