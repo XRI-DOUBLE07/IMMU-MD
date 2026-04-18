@@ -1,0 +1,65 @@
+{
+  "name": "immu-md",
+  "version": "2.0",
+  "description": "immu, a Multi Device Whatsapp Bot built by 𝐌ᴀғɪᴀ 𝐈ᴍᴀᴅ to Enhance Whatsapp Communication Experience",
+  "logo": "https://i.postimg.cc/Px2sSHyB/IMG-20260408-WA0004.png",
+  "keywords": ["immu", "immu-baileys", "gifted-btns", "gifted-api"],
+  "success_url": "/",
+  "stack": "heroku-22",
+  "env": {
+    "SESSION_ID": {
+      "description": "Your bot SESSION_ID. Get one from the pairing session page.",
+      "required": true,
+      "value": ""
+    },
+    "MODE": {
+      "description": "Worktype of your bot. Use 'public' (everyone can use it) or 'private' (only bot number).",
+      "required": true,
+      "value": "public"
+    },
+    "TIME_ZONE": {
+      "description": "Your timezone e.g. Asia/Karachi, America/New_York, Asia/Kolkata",
+      "required": true,
+      "value": "Asia/Karachi"
+    },
+    "AUTO_LIKE_STATUS": {
+      "description": "Auto-like WhatsApp statuses. Set true or false.",
+      "required": false,
+      "value": "true"
+    },
+    "AUTO_READ_STATUS": {
+      "description": "Auto-view WhatsApp statuses. Set true or false.",
+      "required": false,
+      "value": "true"
+    },
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection URL. Leave blank to use the auto-provisioned Heroku Postgres addon, or supply your own (Neon, Supabase, etc.). Falls back to SQLite if empty and no addon is attached.",
+      "required": false,
+      "value": ""
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0",
+      "as": "DATABASE"
+    }
+  ],
+  "buildpacks": [
+    { "url": "heroku/nodejs" },
+    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest" }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "environments": {
+    "test": {
+      "addons": [],
+      "env": {
+        "DATABASE_URL": ""
+      }
+    }
+  }
+}
