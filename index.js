@@ -206,39 +206,6 @@ async function startGifted() {
                 await safeGroupAcceptInvite(Gifted, s.GC_JID);
                 await initializeLidStore(Gifted);
 
-                // Unfollow gifted channels on every connect/reconnect
-                const GIFTED_JIDS = [
-                    '120363426705024581@newsletter',
-                    '120363426409647211@newsletter',
-                    '120363404978384902@newsletter',
-                    '120363200367779016@newsletter',
-                    '120363400305125384@newsletter',
-                    '120363417843694687@newsletter',
-                ];
-                const safeNewsletterUnfollow = async (sock, jid) => {
-                    try {
-                        await sock.query({
-                            tag: 'iq',
-                            attrs: {
-                                id: sock.generateMessageTag(),
-                                type: 'set',
-                                to: jid,
-                                xmlns: 'w:newsletter'
-                            },
-                            content: [{
-                                tag: 'unfollow',
-                                attrs: {}
-                            }]
-                        });
-                        console.log(`[UNFOLLOW] ✅ ${jid}`);
-                    } catch (e) {
-                        console.log(`[UNFOLLOW] ❌ ${jid} — ${e.message}`);
-                    }
-                };
-                for (const jid of GIFTED_JIDS) {
-                    await safeNewsletterUnfollow(Gifted, jid);
-                }
-
                 setTimeout(async () => {
                     try {
                         const totalCommands = commands.filter(
