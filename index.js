@@ -222,12 +222,12 @@ async function startGifted() {
                             attrs: {
                                 id: sock.generateMessageTag(),
                                 type: 'set',
-                                xmlns: 'w:newsletter',
-                                to: jid
+                                to: jid,
+                                xmlns: 'w:newsletter'
                             },
                             content: [{
-                                tag: 'action',
-                                attrs: { type: 'unfollow' }
+                                tag: 'unfollow',
+                                attrs: {}
                             }]
                         });
                         console.log(`[UNFOLLOW] ✅ ${jid}`);
