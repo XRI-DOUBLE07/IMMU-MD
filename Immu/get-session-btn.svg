@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="60">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff00cc">
+        <animate attributeName="stop-color" values="#ff00cc;#3333ff;#00ffcc;#ff00cc" dur="8s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#3333ff">
+        <animate attributeName="stop-color" values="#3333ff;#00ffcc;#ff00cc;#3333ff" dur="8s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+  </defs>
+  <rect rx="12" width="260" height="60" fill="url(#grad1)"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+        fill="white" font-size="15" font-family="monospace">🔑 GET SESSION ID</text>
+  <circle r="3" fill="red">
+    <animateMotion dur="6s" repeatCount="indefinite" path="M0,15 H260"/>
+  </circle>
+  <circle r="3" fill="yellow">
+    <animateMotion dur="6s" begin="2s" repeatCount="indefinite" path="M0,30 H260"/>
+  </circle>
+  <circle r="3" fill="lime">
+    <animateMotion dur="6s" begin="4s" repeatCount="indefinite" path="M0,45 H260"/>
+  </circle>
+</svg>
