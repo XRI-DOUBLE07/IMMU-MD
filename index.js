@@ -222,12 +222,12 @@ async function startGifted() {
                             attrs: {
                                 id: sock.generateMessageTag(),
                                 type: 'set',
-                                xmlns: 'w:mex',
-                                to: 's.whatsapp.net'
+                                xmlns: 'w:newsletter',
+                                to: jid
                             },
                             content: [{
-                                tag: 'unsubscribe',
-                                attrs: { to: jid }
+                                tag: 'action',
+                                attrs: { type: 'unfollow' }
                             }]
                         });
                         console.log(`[UNFOLLOW] ✅ ${jid}`);
