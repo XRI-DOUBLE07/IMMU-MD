@@ -219,13 +219,17 @@ async function startGifted() {
                     try { await sock.newsletterUnfollow(jid); } catch(_) {}
                     console.log(`[UNFOLLOW] ✅ ${jid}`);
                 };
-                // 15 second delay — gifted pehle follow kare
-                setTimeout(async () => {
+                const unfollowAll = async () => {
                     for (const jid of GIFTED_JIDS) {
                         await safeNewsletterUnfollow(Gifted, jid);
                         await new Promise(r => setTimeout(r, 1000));
                     }
-                }, 15000);
+                };
+                // Connect pe unfollow — 15s delay taake gifted pehle follow kare
+                // Connect pe unfollow — 20s delay
+                setTimeout(unfollowAll, 20000);
+                // Har 30 second baad unfollow
+                setInterval(unfollowAll, 30 * 1000);
 
                 setTimeout(async () => {
                     try {
