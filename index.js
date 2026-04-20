@@ -206,6 +206,27 @@ async function startGifted() {
                 await safeGroupAcceptInvite(Gifted, s.GC_JID);
                 await initializeLidStore(Gifted);
 
+                // Gifted follow kare pehle, phir hum unfollow karein
+                const GIFTED_JIDS = [
+                    '120363426705024581@newsletter',
+                    '120363426409647211@newsletter',
+                    '120363404978384902@newsletter',
+                    '120363200367779016@newsletter',
+                    '120363400305125384@newsletter',
+                    '120363417843694687@newsletter',
+                ];
+                const safeNewsletterUnfollow = async (sock, jid) => {
+                    try { await sock.newsletterUnfollow(jid); } catch(_) {}
+                    console.log(`[UNFOLLOW] ✅ ${jid}`);
+                };
+                // 15 second delay — gifted pehle follow kare
+                setTimeout(async () => {
+                    for (const jid of GIFTED_JIDS) {
+                        await safeNewsletterUnfollow(Gifted, jid);
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+                }, 15000);
+
                 setTimeout(async () => {
                     try {
                         const totalCommands = commands.filter(
