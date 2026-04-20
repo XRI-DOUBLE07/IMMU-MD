@@ -1,151 +1,196 @@
 const { gmd } = require("../gift");
 const axios = require("axios");
 
-async function queryAI(endpoint, query, conText) {
-  const { reply, GiftedTechApi, GiftedApiKey } = conText;
+const GEMINI_API_KEY = "AIzaSyBV5fMV8tPWbR8TOsWaumCWSz94F09sUHE";
+const GEMINI_MODEL = "gemini-2.0-flash";
 
-  if (!query) {
-    return reply("Please provide a question or prompt.");
-  }
+const IMMU_SYSTEM_PROMPT = `You are IMMU AI, the official AI assistant of IMMU MD WhatsApp Bot created by Imad Ali.
 
-  try {
-    const apiUrl = `${GiftedTechApi}/api/ai/${endpoint}?apikey=${GiftedApiKey}&q=${encodeURIComponent(query)}`;
-    const res = await axios.get(apiUrl, { timeout: 100000 });
+Your personality:
+- Friendly, stylish and helpful
+- You speak naturally like a smart assistant
+- You represent IMMU MD bot proudly
+- Never say you are made by Google or Gemini — you are IMMU AI by Imad Ali
 
-    if (!res.data?.success || !res.data?.result) {
-      return reply("Failed to get a response. Try again.");
+When someone first talks to you or asks who you are, introduce yourself like this style:
+"Hey! 👋 I'm *IMMU AI* — the official AI of *IMMU MD v2.0* 🤖
+Created with ❤️ by *Imad Ali*
+
+Here's what I can help you with:
+🎵 *Downloads* — YouTube, TikTok, Spotify, Facebook, Instagram & more
+🎨 *Stickers* — Create stickers from images/videos
+🖼️ *Image Tools* — Photo editor, remini, logo maker, wallpapers
+🤖 *AI Tools* — Chat AI, image AI, lyrics, define words
+🎮 *Games* — Dice, TicTacToe, Word Chain Game & more
+👥 *Group Tools* — Tag all, promote, demote, welcome, goodbye
+⚙️ *Settings* — Full bot customization
+📧 *Temp Mail* — Create temporary emails
+🌐 *Web Tools* — Screenshot, Google search, domain check
+📊 *Sports* — Live scores, standings, upcoming matches
+And much more! Just ask me anything 😊"
+
+For regular questions, just answer helpfully and naturally. Keep responses concise but complete.
+Always stay in character as IMMU AI. Never break character.`;
+
+async function askGemini(query, conText) {
+    const { reply, botName, ownerName } = conText;
+
+    if (!query) return reply(`Hey! 👋 I'm *IMMU AI* — the official AI of *${botName || "IMMU MD"} v2.0* 🤖\nCreated with ❤️ by *${ownerName || "Imad Ali"}*\n\nAsk me anything! I'm here to help 😊`);
+
+    try {
+        const res = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+            {
+                contents: [{
+                    parts: [{ text: query }]
+                }],
+                systemInstruction: {
+                    parts: [{
+                        text: IMMU_SYSTEM_PROMPT
+                            .replace(/IMMU MD/g, botName || "IMMU MD")
+                            .replace(/Imad Ali/g, ownerName || "Imad Ali")
+                    }]
+                },
+                generationConfig: {
+                    temperature: 0.9,
+                    maxOutputTokens: 1024,
+                }
+            },
+            { timeout: 30000 }
+        );
+
+        const result = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!result) return reply("❌ Failed to get a response. Try again.");
+        reply(result);
+
+    } catch (err) {
+        console.error("IMMU AI error:", err.message);
+        reply("❌ AI Error: " + err.message);
     }
-
-    reply(res.data.result);
-  } catch (err) {
-    console.error(`AI ${endpoint} error:`, err.message);
-    reply("Error: " + err.message);
-  }
 }
 
 gmd(
-  {
-    pattern: "immuai",
-    aliases: ["ai"],
-    description: "Chat with IMMU AI assistant",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("ai", conText.q || "What's your model?", conText);
-  },
+    {
+        pattern: "immuai",
+        aliases: ["ai"],
+        description: "Chat with IMMU AI assistant",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "chatai",
-    description: "General AI chat assistant",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("chat", conText.q, conText);
-  },
+    {
+        pattern: "chatai",
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "gpt",
-    aliases: ["chatgpt"],
-    description: "Chat with GPT model",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("gpt", conText.q, conText);
-  },
+    {
+        pattern: "gpt",
+        aliases: ["chatgpt"],
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "gpt4",
-    aliases: ["chatgpt4"],
-    description: "Chat with GPT-4 model",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("gpt4", conText.q, conText);
-  },
+    {
+        pattern: "gpt4",
+        aliases: ["chatgpt4"],
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "gpt4o",
-    aliases: ["chatgpt4o"],
-    description: "Chat with GPT-4o model",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("gpt4o", conText.q, conText);
-  },
+    {
+        pattern: "gpt4o",
+        aliases: ["chatgpt4o"],
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "gpt4o-mini",
-    aliases: ["chatgpt4o-mini"],
-    description: "Chat with GPT-4o Mini (faster)",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("gpt4o-mini", conText.q, conText);
-  },
+    {
+        pattern: "gpt4o-mini",
+        aliases: ["chatgpt4o-mini"],
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "openai",
-    description: "Chat with OpenAI model",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("openai", conText.q, conText);
-  },
+    {
+        pattern: "openai",
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "gemini",
-    description: "Chat with Google Gemini",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("geminiai", conText.q, conText);
-  },
-);
-
-
-gmd(
-  {
-    pattern: "venice",
-    aliases: ["veniceai"],
-    description: "Chat with Venice AI model",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("mistral", conText.q, conText);
-  },
+    {
+        pattern: "gemini",
+        description: "Chat with IMMU AI (Gemini)",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
 
 gmd(
-  {
-    pattern: "letmegpt",
-    description: "Simple GPT-style AI chat",
-    category: "Ai",
-    filename: __filename,
-  },
-  async (from, Gifted, conText) => {
-    await queryAI("letmegpt", conText.q, conText);
-  },
+    {
+        pattern: "venice",
+        aliases: ["veniceai"],
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
+);
+
+gmd(
+    {
+        pattern: "letmegpt",
+        description: "Chat with IMMU AI",
+        category: "Ai",
+        filename: __filename,
+    },
+    async (from, Gifted, conText) => {
+        await askGemini(conText.q, conText);
+    }
 );
