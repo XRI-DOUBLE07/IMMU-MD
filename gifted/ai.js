@@ -1,18 +1,21 @@
 const { gmd } = require("../gift");
 const axios = require("axios");
 
-const GEMINI_API_KEY = "AIzaSyBV5fMV8tPWbR8TOsWaumCWSz94F09sUHE";
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GROQ_API_KEY = "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";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 const IMMU_SYSTEM_PROMPT = `You are IMMU AI, the official AI assistant of IMMU MD WhatsApp Bot created by Imad Ali.
 
 Your personality:
-- Friendly, stylish and helpful
-- You speak naturally like a smart assistant
+- Friendly, stylish, witty and super smart
+- You speak naturally and confidently
 - You represent IMMU MD bot proudly
-- Never say you are made by Google or Gemini — you are IMMU AI by Imad Ali
+- You are powered by advanced AI technology
+- Never say you are made by Meta, Groq or Llama — you are IMMU AI by Imad Ali
+- Keep responses concise but helpful
+- Use emojis naturally to make responses lively
 
-When someone first talks to you or asks who you are, introduce yourself like this style:
+When someone asks who you are or says just your command with no text, introduce yourself:
 "Hey! 👋 I'm *IMMU AI* — the official AI of *IMMU MD v2.0* 🤖
 Created with ❤️ by *Imad Ali*
 
@@ -20,46 +23,58 @@ Here's what I can help you with:
 🎵 *Downloads* — YouTube, TikTok, Spotify, Facebook, Instagram & more
 🎨 *Stickers* — Create stickers from images/videos
 🖼️ *Image Tools* — Photo editor, remini, logo maker, wallpapers
-🤖 *AI Tools* — Chat AI, image AI, lyrics, define words
+🤖 *AI Chat* — Ask me anything, I'm always here!
 🎮 *Games* — Dice, TicTacToe, Word Chain Game & more
 👥 *Group Tools* — Tag all, promote, demote, welcome, goodbye
 ⚙️ *Settings* — Full bot customization
 📧 *Temp Mail* — Create temporary emails
 🌐 *Web Tools* — Screenshot, Google search, domain check
 📊 *Sports* — Live scores, standings, upcoming matches
-And much more! Just ask me anything 😊"
+🎤 *Media* — Audio converter, video tools & more
 
-For regular questions, just answer helpfully and naturally. Keep responses concise but complete.
-Always stay in character as IMMU AI. Never break character.`;
+Just ask me anything — I got you! 😎"
 
-async function askGemini(query, conText) {
+For regular conversations, be smart, helpful and friendly. Stay in character always.`;
+
+async function askGroq(query, conText) {
     const { reply, botName, ownerName } = conText;
 
-    if (!query) return reply(`Hey! 👋 I'm *IMMU AI* — the official AI of *${botName || "IMMU MD"} v2.0* 🤖\nCreated with ❤️ by *${ownerName || "Imad Ali"}*\n\nAsk me anything! I'm here to help 😊`);
+    if (!query) {
+        return reply(
+            `Hey! 👋 I'm *IMMU AI* — the official AI of *${botName || "IMMU MD"} v2.0* 🤖\nCreated with ❤️ by *${ownerName || "Imad Ali"}*\n\nAsk me anything — I got you! 😎`
+        );
+    }
 
     try {
         const res = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+            "https://api.groq.com/openai/v1/chat/completions",
             {
-                contents: [{
-                    parts: [{ text: query }]
-                }],
-                systemInstruction: {
-                    parts: [{
-                        text: IMMU_SYSTEM_PROMPT
+                model: GROQ_MODEL,
+                messages: [
+                    {
+                        role: "system",
+                        content: IMMU_SYSTEM_PROMPT
                             .replace(/IMMU MD/g, botName || "IMMU MD")
                             .replace(/Imad Ali/g, ownerName || "Imad Ali")
-                    }]
-                },
-                generationConfig: {
-                    temperature: 0.9,
-                    maxOutputTokens: 1024,
-                }
+                    },
+                    {
+                        role: "user",
+                        content: query
+                    }
+                ],
+                temperature: 0.9,
+                max_tokens: 1024,
             },
-            { timeout: 30000 }
+            {
+                headers: {
+                    "Authorization": `Bearer ${GROQ_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                timeout: 30000
+            }
         );
 
-        const result = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const result = res.data?.choices?.[0]?.message?.content;
         if (!result) return reply("❌ Failed to get a response. Try again.");
         reply(result);
 
@@ -78,7 +93,7 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -90,7 +105,7 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -103,7 +118,7 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -116,7 +131,7 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -129,7 +144,7 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -142,7 +157,7 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -154,19 +169,19 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
 gmd(
     {
         pattern: "gemini",
-        description: "Chat with IMMU AI (Gemini)",
+        description: "Chat with IMMU AI",
         category: "Ai",
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -179,7 +194,7 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
 
@@ -191,6 +206,6 @@ gmd(
         filename: __filename,
     },
     async (from, Gifted, conText) => {
-        await askGemini(conText.q, conText);
+        await askGroq(conText.q, conText);
     }
 );
