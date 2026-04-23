@@ -44,6 +44,7 @@
     "google-tts-api": "*",
     "jimp": "*",
     "mime-types": "^2.1.35",
+    "mongodb": "^6.3.0",
     "moment-timezone": "^0.5.45",
     "node-cache": "^5.1.2",
     "node-fetch": "^3.3.2",
