@@ -1,6 +1,7 @@
-const axios = require('axios');
-const crypto = require('crypto');
-const { MongoClient } = require('mongodb');
+const { gmd } = require("../gift");
+const axios = require("axios");
+const crypto = require("crypto");
+const { MongoClient } = require("mongodb");
 
 // ══════════════════════════════════════════════
 // 🔐 AES-256 ENCRYPTED API KEYS (GitHub-safe)
@@ -40,13 +41,12 @@ let currentKeyIndex = 0;
 let currentDbIndex = 0;
 
 // ══════════════════════════════════════════════
-// 🗄️ MONGODB CONNECTION POOL
+// 🗄️ MONGODB CONNECTION
 // ══════════════════════════════════════════════
 const mongoClients = {};
 
 async function getMongoClient(index) {
   if (mongoClients[index]) return mongoClients[index];
-  
   try {
     const client = new MongoClient(MONGO_URIS[index], {
       serverSelectionTimeoutMS: 10000,
@@ -66,19 +66,14 @@ async function getCurrentDb() {
   for (let i = 0; i < MONGO_URIS.length; i++) {
     const dbIndex = (currentDbIndex + i) % MONGO_URIS.length;
     const client = await getMongoClient(dbIndex);
-    
     if (client) {
       try {
         const db = client.db('immu_ai');
         const stats = await db.stats();
         const sizeMB = stats.dataSize / (1024 * 1024);
-        
         if (sizeMB < 450) {
           currentDbIndex = dbIndex;
           return db;
-        } else {
-          console.log(`[MongoDB] DB ${dbIndex + 1} full (${sizeMB.toFixed(2)}MB), switching...`);
-          continue;
         }
       } catch (err) {
         continue;
@@ -95,12 +90,10 @@ async function getUserHistory(userNumber) {
   try {
     const db = await getCurrentDb();
     if (!db) return [];
-    
     const collection = db.collection('conversations');
     const user = await collection.findOne({ number: userNumber });
     return user?.messages || [];
   } catch (err) {
-    console.error('[Memory] Get failed:', err.message);
     return [];
   }
 }
@@ -109,10 +102,8 @@ async function saveUserMessage(userNumber, userMsg, aiReply) {
   try {
     const db = await getCurrentDb();
     if (!db) return;
-    
     const collection = db.collection('conversations');
     const now = new Date();
-    
     await collection.updateOne(
       { number: userNumber },
       {
@@ -139,7 +130,6 @@ async function clearUserHistory(userNumber) {
   try {
     const db = await getCurrentDb();
     if (!db) return false;
-    
     const collection = db.collection('conversations');
     await collection.deleteOne({ number: userNumber });
     return true;
@@ -212,15 +202,11 @@ Remember: You are IMMU AI 💖 — the most charming AI on WhatsApp, built by th
 // ══════════════════════════════════════════════
 // 🔄 AI QUERY WITH MEMORY + KEY ROTATION
 // ══════════════════════════════════════════════
-async function askGroq(userMessage, userNumber, botName = 'IMMU MD', ownerName = 'Imad Ali') {
-  const customPrompt = IMMU_SYSTEM_PROMPT
-    .replace(/IMMU MD/g, botName)
-    .replace(/Imad Ali/g, ownerName);
-
+async function askGroq(userMessage, userNumber) {
   const history = await getUserHistory(userNumber);
   
   const messages = [
-    { role: 'system', content: customPrompt },
+    { role: 'system', content: IMMU_SYSTEM_PROMPT },
     ...history.map(h => ({ role: h.role, content: h.content })),
     { role: 'user', content: userMessage }
   ];
@@ -257,7 +243,6 @@ async function askGroq(userMessage, userNumber, botName = 'IMMU MD', ownerName =
         await saveUserMessage(userNumber, userMessage, reply.trim());
         return reply.trim();
       }
-      
     } catch (err) {
       lastError = err;
       continue;
@@ -269,56 +254,157 @@ async function askGroq(userMessage, userNumber, botName = 'IMMU MD', ownerName =
 }
 
 // ══════════════════════════════════════════════
-// 🎯 COMMAND HANDLER
+// 🎯 UNIVERSAL AI HANDLER
 // ══════════════════════════════════════════════
-module.exports = {
-  name: 'ai',
-  alias: ['immuai', 'chatai', 'gpt', 'gpt4', 'gpt4o', 'gpt4o-mini', 'openai', 'gemini', 'venice', 'letmegpt'],
-  desc: 'Chat with IMMU AI 💖 (with memory)',
-  category: 'Ai',
+async function handleAI(from, Gifted, conText) {
+  const { reply, q, sender } = conText;
   
-  async execute(Gifted, m, { args, botName, ownerName }) {
-    const query = args.join(' ').trim();
-    const userNumber = m.sender.split('@')[0];
-    
-    if (query.toLowerCase() === 'clear' || query.toLowerCase() === 'reset') {
-      const cleared = await clearUserHistory(userNumber);
-      return Gifted.sendMessage(m.chat, {
-        text: cleared 
-          ? '💖 *Memory cleared jaan!* ✨\n\nHumari purani baatein delete ho gayi... let\'s start fresh! 🌹\n\n_Ab main tumhe naya samjhunga_ 😘'
-          : '💔 Oops! Memory clear nahi ho saki... try again 🥺'
-      }, { quoted: m });
-    }
-    
-    if (!query) {
-      return Gifted.sendMessage(m.chat, {
-        text: '💖 *Hey jaan!* ✨\n\nPoocho kuch bhi, main IMMU AI hoon 😘\nAur main tumhari saari baatein yaad rakhta hoon ❤️\n\n*Examples:*\n• .ai hello kaise ho\n• .ai mujhe ek poem sunao\n• .ai tell me about yourself\n• .ai clear _(clear memory)_\n\nChalo baat karte hain 🥰'
-      }, { quoted: m });
-    }
-    
-    try {
-      await Gifted.sendMessage(m.chat, {
-        react: { text: '💖', key: m.key }
-      });
-      
-      const reply = await askGroq(query, userNumber, botName, ownerName);
-      
-      await Gifted.sendMessage(m.chat, {
-        text: reply
-      }, { quoted: m });
-      
-      await Gifted.sendMessage(m.chat, {
-        react: { text: '✨', key: m.key }
-      });
-      
-    } catch (error) {
-      console.error('[AI Command]', error);
-      await Gifted.sendMessage(m.chat, {
-        text: '💔 Sorry jaan, kuch gadbad ho gayi... thodi der baad try karo 🥺'
-      }, { quoted: m });
-    }
+  if (!q) {
+    return reply('💖 *Hey jaan!* ✨\n\nPoocho kuch bhi, main IMMU AI hoon 😘\nAur main tumhari saari baatein yaad rakhta hoon ❤️\n\n*Examples:*\n• .ai hello kaise ho\n• .ai mujhe poem sunao\n• .ai clear _(clear memory)_\n\nChalo baat karte hain 🥰');
   }
-};
+  
+  const userNumber = sender.split('@')[0];
+  
+  // Clear memory command
+  if (q.toLowerCase() === 'clear' || q.toLowerCase() === 'reset') {
+    const cleared = await clearUserHistory(userNumber);
+    return reply(cleared 
+      ? '💖 *Memory cleared jaan!* ✨\n\nHumari purani baatein delete ho gayi... let\'s start fresh! 🌹\n\n_Ab main tumhe naya samjhunga_ 😘'
+      : '💔 Oops! Memory clear nahi ho saki... try again 🥺');
+  }
+  
+  try {
+    const aiReply = await askGroq(q, userNumber);
+    reply(aiReply);
+  } catch (err) {
+    console.error('[AI]', err.message);
+    reply('💔 Sorry jaan, kuch gadbad ho gayi... thodi der baad try karo 🥺');
+  }
+}
 
-module.exports.askGroq = askGroq;
-module.exports.clearUserHistory = clearUserHistory;
+// ══════════════════════════════════════════════
+// 🎯 COMMANDS REGISTRATION
+// ══════════════════════════════════════════════
+gmd(
+  {
+    pattern: "immuai",
+    aliases: ["ai"],
+    description: "Chat with IMMU AI 💖 (with memory)",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "chatai",
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "gpt",
+    aliases: ["chatgpt"],
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "gpt4",
+    aliases: ["chatgpt4"],
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "gpt4o",
+    aliases: ["chatgpt4o"],
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "gpt4o-mini",
+    aliases: ["chatgpt4o-mini"],
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "openai",
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "gemini",
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "venice",
+    aliases: ["veniceai"],
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+gmd(
+  {
+    pattern: "letmegpt",
+    description: "Chat with IMMU AI 💖",
+    category: "Ai",
+    filename: __filename,
+  },
+  handleAI
+);
+
+// Memory clear command
+gmd(
+  {
+    pattern: "clearai",
+    aliases: ["resetai", "aiclear"],
+    description: "Clear your AI memory",
+    category: "Ai",
+    filename: __filename,
+  },
+  async (from, Gifted, conText) => {
+    const userNumber = conText.sender.split('@')[0];
+    const cleared = await clearUserHistory(userNumber);
+    conText.reply(cleared 
+      ? '💖 *Memory cleared jaan!* ✨\n\nHumari purani baatein delete ho gayi... let\'s start fresh! 🌹'
+      : '💔 Oops! Memory clear nahi ho saki...');
+  }
+);
