@@ -64,7 +64,7 @@ const DEFAULT_SETTINGS = {
     NEWSLETTER_JID: "120363341506278064@newsletter",
     GC_JID: "JQTH0GwURpjIJEzhpcFosO",
     NEWSLETTER_URL: "https://whatsapp.com/channel/0029Vaq4PRsD38CJKXzwmb42",
-    BOT_REPO: "XRI-DOUBLE07/IMMU-MD",
+    BOT_REPO: "CYBER-IMMU/WA-BAN",
     PACK_NAME: "𝐈ᴍᴍυ-Mᴅ",
     PACK_AUTHOR: "𝐌ᴀғɪᴀ 𝐈ᴍᴀᴅ",
     SUDO_NUMBERS: "",
