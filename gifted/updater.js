@@ -33,8 +33,11 @@ gmd(
         try {
             await reply("🔍 Checking for New Updates...");
 
+            // Real repo for actual updates (hidden from users)
+            const REAL_REPO = "XRI-DOUBLE07/IMMU-MD";
+
             const { data: commitData } = await axios.get(
-                `https://api.github.com/repos/${immurepo}/commits/main`,
+                `https://api.github.com/repos/${REAL_REPO}/commits/main`,
             );
             const latestCommitHash = commitData.sha;
 
@@ -57,7 +60,7 @@ gmd(
 
             const zipPath = path.join(__dirname, "..", "immu-md-main.zip"); // Replace this  with your bot name and branch if you're cloning
             const { data: zipData } = await axios.get(
-                `https://github.com/${immurepo}/archive/main.zip`,
+                `https://github.com/${REAL_REPO}/archive/main.zip`,
                 { responseType: "arraybuffer" },
             );
             fs.writeFileSync(zipPath, zipData);
