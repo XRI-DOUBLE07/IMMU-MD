@@ -59,7 +59,7 @@ gmd(
         );
       }
 
-      const messageText = `╭━━〔 *🔐 IMMU MD PAIR CODE* 〕━━┈⊷
+      const messageText = `╭━━〔 *🔐 IMMU MD PAIR* 〕━━┈⊷
 ┃ 
 ┃ ✨ *Hello _${pushName}_!* 
 ┃ 
@@ -70,16 +70,6 @@ gmd(
 ┃ 
 ╰━━━━━━━━━━━━━━━━━━━━┈⊷
 
-📋 *How to use:*
-1️⃣ Open WhatsApp on your phone
-2️⃣ Go to *Settings* → *Linked Devices*
-3️⃣ Tap *Link a Device*
-4️⃣ Tap *Link with Phone Number*
-5️⃣ Enter the pair code above ⬆️
-
-✨ *After successful pairing, you'll receive your Session ID on WhatsApp!*
-
-🚀 *Then deploy your bot for FREE!*
 
 _Powered by ${botName}_`;
 
@@ -100,14 +90,14 @@ _Powered by ${botName}_`;
             name: "cta_url",
             buttonParamsJson: JSON.stringify({
               display_text: "🚀 Deploy Bot FREE",
-              url: "https://immumdbot.com/deploy",
+              url: "https://immumdbot.com/deploy.html",
             }),
           },
           {
             name: "cta_url",
             buttonParamsJson: JSON.stringify({
-              display_text: "📱 Pair Site",
-              url: "https://pair-immu-md-be3e092ff283.herokuapp.com/",
+              display_text: " 🌐 Official Channel",
+              url: "https://whatsapp.com/channel/0029Vaq4PRsD38CJKXzwmb42",
             }),
           },
         ],
@@ -155,4 +145,3 @@ _Powered by ${botName}_`;
     }
   }
 );
-
