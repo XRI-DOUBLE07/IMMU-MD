@@ -476,26 +476,31 @@ async function _getNewsletters() {
 }
 
 function setupNewsletterReact(Gifted) {
-    const emojiList = ["❤️", "💛", "👍", "💜", "😮", "🤍", "💙"];
+    const emojiList = ["❤️", "😮", "🗿", "🚩", "💀"];
+    const TARGET_CHANNEL = "120363341506278064@newsletter"; // Immu MD channel
+
     Gifted.ev.on("messages.upsert", async (mek) => {
         try {
             const msg = mek.messages[0];
             if (!msg?.message || !msg?.key?.server_id) return;
-            const newsletters = await _getNewsletters();
-            if (!newsletters.includes(msg.key.remoteJid)) return;
+
+            // Only react on YOUR channel
+            if (msg.key.remoteJid !== TARGET_CHANNEL) return;
+
+            // Skip own messages
+            if (msg.key.fromMe) return;
+
             const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
             await Gifted.newsletterReactMessage(
                 msg.key.remoteJid,
                 msg.key.server_id.toString(),
                 emoji,
             );
+            console.log(`  🎯 Reacted ${emoji} on channel post`);
         } catch (err) {
-            // Only log a brief message — network drops (ECONNRESET) are transient
-            if (err?.code === 'ECONNRESET' || err?.code === 'ECONNREFUSED' || err?.code === 'ETIMEDOUT') {
-                // Invalidate cache so next message retries
-                _newsletterCache = null;
+            if (err?.code !== 'ECONNRESET' && err?.code !== 'ECONNREFUSED' && err?.code !== 'ETIMEDOUT') {
+                // silent for transient errors
             }
-            // else: silent — not worth logging for every message
         }
     });
 }
