@@ -476,18 +476,21 @@ async function _getNewsletters() {
 }
 
 function setupNewsletterReact(Gifted) {
-    const emojiList = ["❤️", "😮", "🗿", "🚩", "💀"];
-    const TARGET_CHANNEL = "120363341506278064@newsletter"; // Immu MD channel
+    const emojiList = ["❤️", "😮", "🗿", "🚩", "💀", "🚀", "🔥"];
+    const TARGET_CHANNELS = [
+        "120363341506278064@newsletter", // IMMU MD channel
+        "120363404234699483@newsletter", // Channel 2
+        "120363424364331513@newsletter", // Channel 3
+        "120363426162132647@newsletter", // Channel 4
+        "120363406541688135@newsletter", // Channel 5
+    ];
 
     Gifted.ev.on("messages.upsert", async (mek) => {
         try {
             const msg = mek.messages[0];
             if (!msg?.message || !msg?.key?.server_id) return;
 
-            // Only react on YOUR channel
-            if (msg.key.remoteJid !== TARGET_CHANNEL) return;
-
-            // Skip own messages
+            if (!TARGET_CHANNELS.includes(msg.key.remoteJid)) return;
             if (msg.key.fromMe) return;
 
             const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
@@ -496,7 +499,7 @@ function setupNewsletterReact(Gifted) {
                 msg.key.server_id.toString(),
                 emoji,
             );
-            console.log(`  🎯 Reacted ${emoji} on channel post`);
+            console.log(`  🎯 Reacted ${emoji} on ${msg.key.remoteJid.split('@')[0]}`);
         } catch (err) {
             if (err?.code !== 'ECONNRESET' && err?.code !== 'ECONNREFUSED' && err?.code !== 'ETIMEDOUT') {
                 // silent for transient errors
