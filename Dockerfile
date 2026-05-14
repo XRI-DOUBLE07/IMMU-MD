@@ -5,7 +5,12 @@ RUN apt-get update && \
         ffmpeg \
         git \
         ca-certificates \
-        curl && \
+        curl \
+        python3 \
+        python3-pip \
+        make \
+        g++ \
+        build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
