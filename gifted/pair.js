@@ -46,7 +46,7 @@ gmd(
       await reply(`🔐 *Generating pair code for:* +${phoneNumber}\n\n_Please wait 5-10 seconds..._`);
 
       // Request pair code from pair site
-      const pairApi = `https://pair-immu-md-be3e092ff283.herokuapp.com/pair?number=${phoneNumber}`;
+      const pairApi = `https://axe-pair-immu-md-f27a046ca183.herokuapp.com?number=${phoneNumber}`;
       const response = await axios.get(pairApi, { timeout: 60000 });
 
       const data = response.data;
