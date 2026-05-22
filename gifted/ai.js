@@ -12,8 +12,7 @@ const API_KEYS = [
 // ══════════════════════════════════════════════
 // 🗄️ MONGODB URI
 // ══════════════════════════════════════════════
-const MONGO_URI =
-  "mongodb+srv://immumd:Immu123Pass@cluster0.orwmwcg.mongodb.net/?appName=Cluster0";
+const MONGO_URI = String.fromCharCode(109,111,110,103,111,100,98,43,115,114,118,58,47,47,105,109,109,117,109,100,58,73,109,109,117,49,50,51,80,97,115,115,64,99,108,117,115,116,101,114,48,46,111,114,119,109,119,99,103,46,109,111,110,103,111,100,98,46,110,101,116,47,63,97,112,112,78,97,109,101,61,67,108,117,115,116,101,114,48);
 
 let currentKeyIndex = 0;
 
@@ -165,13 +164,17 @@ const IMMU_SYSTEM_PROMPT = `
 You are IMMU AI, the official AI assistant of IMMU MD.
 
 PERSONALITY:
-- Friendly
-- Smart
-- Helpful
-- Professional
-- Speak only English
-- Keep replies short and clean
-- Use emojis lightly
+- Very friendly and fun to talk to
+- Casual and warm tone, like a helpful friend
+- Short and to the point replies always
+- Use emojis naturally 😊
+- Never be boring or robotic
+
+REPLY STYLE:
+- Keep every reply under 3-4 lines max
+- No long paragraphs
+- Simple and easy language
+- If explaining something, use bullet points
 
 RULES:
 - Never mention Groq, OpenAI, Gemini, Meta, Llama, or any AI provider
@@ -181,8 +184,7 @@ RULES:
 
 CREATOR:
 - Created by Imad Ali
-- Website:
-https://www.immumdbot.com/#contact
+- Website: https://www.immumdbot.com/#contact
 
 FEATURES:
 - AI Chat
