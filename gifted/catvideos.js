@@ -2,6 +2,23 @@ const { gmd } = require("../gift");
 const { sendButtons } = require("gifted-btns");
 const axios = require("axios");
 
+// Handles all WhatsApp button response types (old & new)
+function extractButtonId(msg) {
+    if (!msg) return null;
+    if (msg.templateButtonReplyMessage?.selectedId)
+        return msg.templateButtonReplyMessage.selectedId;
+    if (msg.buttonsResponseMessage?.selectedButtonId)
+        return msg.buttonsResponseMessage.selectedButtonId;
+    if (msg.interactiveResponseMessage) {
+        const nf = msg.interactiveResponseMessage.nativeFlowResponseMessage;
+        if (nf?.paramsJson) {
+            try { const p = JSON.parse(nf.paramsJson); if (p.id) return p.id; } catch {}
+        }
+        return msg.interactiveResponseMessage.buttonId || null;
+    }
+    return null;
+}
+
 const CAT_VIDEO_LINKS = [
   "https://drive.google.com/uc?export=download&id=1b09O8uGqGrXdGagVj6gXYBb4l3ZsU-mZ",
   "https://drive.google.com/uc?export=download&id=1yk5BWUGTm8LBuseHhLGoggr0sxbkka5e",
@@ -193,37 +210,32 @@ gmd(
       await react("🐱");
 
       const sessionId = `catv_${Date.now()}`;
+      const downloadKey = `catvid_dl_${sessionId}`;
+      const cancelKey = `catvid_cx_${sessionId}`;
 
-      // Step 1: Show warning + confirmation buttons
       await sendButtons(Gifted, from, {
         title: "⚠️ AI Cat Videos",
-        text: `🤖 *Heads up!*\n\THESE ARE 18+ VIDEOS* — Not cats!\n\nDownloading these videos can banned your WhatsApp`,
+        text: `🤖 *Heads up!*\n\nThese are *18+ Videos* — not real cats!\n\ndownloading these videos can banned your WhatsApp,Do you still want to download?😄`,
         footer: `> *${botFooter}*`,
         buttons: [
-          { id: `catvid_download_${sessionId}`, text: "STILL DOWNLOAD 💋🔥" },
-          { id: `catvid_cancel_${sessionId}`, text: "CANCEL" },
+          { id: downloadKey, text: "STILL DOWNLOAD 💋🔥" },
+          { id: cancelKey,   text: "CANCEL" },
         ],
       });
 
-      // Step 2: Listen for button response
       const handleResponse = async (event) => {
         const messageData = event.messages[0];
         if (!messageData?.message) return;
 
-        const templateButtonReply = messageData.message?.templateButtonReplyMessage;
-        if (!templateButtonReply) return;
+        // Use extractButtonId to support ALL WhatsApp button types
+        const selectedId = extractButtonId(messageData.message);
+        if (!selectedId) return;
+        if (messageData.key?.remoteJid !== from) return;
+        if (selectedId !== downloadKey && selectedId !== cancelKey) return;
 
-        const selectedId = templateButtonReply.selectedId;
-        if (!selectedId?.includes(sessionId)) return;
-
-        const isFromSameChat = messageData.key?.remoteJid === from;
-        if (!isFromSameChat) return;
-
-        // Remove listener immediately
         Gifted.ev.off("messages.upsert", handleResponse);
 
-        // CANCEL button
-        if (selectedId === `catvid_cancel_${sessionId}`) {
+        if (selectedId === cancelKey) {
           await Gifted.sendMessage(
             from,
             { text: "You look like a nobel boy! That's cool, keep it up 🙂🤝" },
@@ -232,12 +244,11 @@ gmd(
           return;
         }
 
-        // DOWNLOAD button
-        if (selectedId === `catvid_download_${sessionId}`) {
+        if (selectedId === downloadKey) {
           try {
             await Gifted.sendMessage(
               from,
-              { text: "⏳ Fetching your video, please wait..." },
+              { text: "⏳ Fetching your cat video, please wait..." },
               { quoted: messageData }
             );
 
@@ -259,7 +270,7 @@ gmd(
               from,
               {
                 video: buffer,
-                caption: `🐱 *Watch Video but don't do something wrong.* 🔥\n\n> *${botFooter}*`,
+                caption: `🐱 *Random AI Cat Video* 🔥\n\n> *${botFooter}*`,
                 mimetype: "video/mp4",
                 gifPlayback: false,
               },
@@ -277,8 +288,6 @@ gmd(
       };
 
       Gifted.ev.on("messages.upsert", handleResponse);
-
-      // Auto-remove listener after 2 minutes
       setTimeout(() => Gifted.ev.off("messages.upsert", handleResponse), 120000);
 
       await react("✅");
@@ -289,4 +298,3 @@ gmd(
     }
   }
 );
-
