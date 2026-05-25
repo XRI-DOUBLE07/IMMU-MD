@@ -215,8 +215,8 @@ gmd(
       const cancelKey   = `catvid_cx_${sessionId}`;
 
       await sendButtons(Gifted, from, {
-        title: "⚠️ AI Cat Videos",
-        text: `🤖 *Heads up!*\n\nThese are *AI-generated funny cat videos* — not real cats!\n\nThey are hilarious but 100% artificial. Still want to download one? 😄`,
+        title: "⚠️ ADULT CONTENT WARNING",
+        text: `🤖 *WAIT!*\n\nThese are *🔞Age Restricted Content Not funny cat videos* — not real cats!\n\This content is strictly for mature audiences only. Please confirm before proceeding.`,
         footer: `> *${botFooter}*`,
         buttons: [
           { id: downloadKey, text: "STILL DOWNLOAD 💋🔥" },
@@ -271,7 +271,7 @@ gmd(
               from,
               {
                 video: buffer,
-                caption: `🐱 *Random AI Cat Video* 🔥\n\n> *${botFooter}*`,
+                caption: `🔥 *Go easy, don't snap anything! 🚀😂* 🔥\n\n> *${botFooter}*`,
                 mimetype: "video/mp4",
                 gifPlayback: false,
               },
@@ -281,7 +281,7 @@ gmd(
             console.error("Cat video download error:", dlErr.message);
             await Gifted.sendMessage(
               from,
-              { text: "❌ Failed to fetch cat video. Please try again later." },
+              { text: "❌ Failed to fetch video. Please try again later." },
               { quoted: messageData }
             );
           }
