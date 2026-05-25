@@ -216,7 +216,7 @@ gmd(
 
       await sendButtons(Gifted, from, {
         title: "⚠️ ADULT CONTENT WARNING",
-        text: `🤖 *WAIT!*\n\nThese are *🔞Age Restricted Content Not funny cat videos* — not real cats!\n\This content is strictly for mature audiences only. Please confirm before proceeding.`,
+        text: `🤖 *WAIT!*\n\nPleas Note *🔞Downloading these content can banned your WhatsApp* — not real cats!\n\This content is strictly for mature audiences only. Please confirm before proceeding.`,
         footer: `> *${botFooter}*`,
         buttons: [
           { id: downloadKey, text: "STILL DOWNLOAD 💋🔥" },
