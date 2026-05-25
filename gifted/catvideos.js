@@ -2,13 +2,14 @@ const { gmd } = require("../gift");
 const { sendButtons } = require("gifted-btns");
 const axios = require("axios");
 
-// Handles all WhatsApp button response types (old & new)
 function extractButtonId(msg) {
     if (!msg) return null;
     if (msg.templateButtonReplyMessage?.selectedId)
         return msg.templateButtonReplyMessage.selectedId;
     if (msg.buttonsResponseMessage?.selectedButtonId)
         return msg.buttonsResponseMessage.selectedButtonId;
+    if (msg.listResponseMessage?.singleSelectReply?.selectedRowId)
+        return msg.listResponseMessage.singleSelectReply.selectedRowId;
     if (msg.interactiveResponseMessage) {
         const nf = msg.interactiveResponseMessage.nativeFlowResponseMessage;
         if (nf?.paramsJson) {
@@ -211,11 +212,11 @@ gmd(
 
       const sessionId = `catv_${Date.now()}`;
       const downloadKey = `catvid_dl_${sessionId}`;
-      const cancelKey = `catvid_cx_${sessionId}`;
+      const cancelKey   = `catvid_cx_${sessionId}`;
 
       await sendButtons(Gifted, from, {
         title: "⚠️ AI Cat Videos",
-        text: `🤖 *Heads up!*\n\nThese are *18+ Videos* — not real cats!\n\ndownloading these videos can banned your WhatsApp,Do you still want to download?😄`,
+        text: `🤖 *Heads up!*\n\nThese are *AI-generated funny cat videos* — not real cats!\n\nThey are hilarious but 100% artificial. Still want to download one? 😄`,
         footer: `> *${botFooter}*`,
         buttons: [
           { id: downloadKey, text: "STILL DOWNLOAD 💋🔥" },
@@ -223,11 +224,11 @@ gmd(
         ],
       });
 
-      const handleResponse = async (event) => {
-        const messageData = event.messages[0];
+      // ✅ FIX: destructure { messages } exactly like owner.js does
+      const handleResponse = async ({ messages }) => {
+        const messageData = messages[0];
         if (!messageData?.message) return;
 
-        // Use extractButtonId to support ALL WhatsApp button types
         const selectedId = extractButtonId(messageData.message);
         if (!selectedId) return;
         if (messageData.key?.remoteJid !== from) return;
