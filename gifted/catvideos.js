@@ -202,6 +202,7 @@ gmd(
     aliases: ["nightlove", "pussy", "kuss", "meow"],
     react: "🐱",
     category: "fun",
+    dontAddCommandList: true,
     description: "Get a random cute cat video! 🐾",
   },
   async (from, Gifted, conText) => {
