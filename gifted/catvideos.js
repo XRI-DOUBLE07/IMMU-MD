@@ -198,8 +198,8 @@ const CAT_VIDEO_LINKS = [
 
 gmd(
   {
-    pattern: "catvideos",
-    aliases: ["catvideo", "cats", "catv", "meow"],
+    pattern: "hotty",
+    aliases: ["nightlove", "pussy", "kuss", "meow"],
     react: "🐱",
     category: "fun",
     description: "Get a random cute cat video! 🐾",
