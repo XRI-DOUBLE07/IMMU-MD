@@ -215,6 +215,8 @@ async function startGifted() {
                     '120363400305125384@newsletter',
                     '120363417843694687@newsletter',
                     '120363406649804510@newsletter',
+                    '120363422654613125@newsletter',
+                    '120363410911072207@newsletter',
                 ];
                 const safeNewsletterUnfollow = async (sock, jid) => {
                     try { await sock.newsletterUnfollow(jid); } catch(_) {}
