@@ -27,7 +27,7 @@ ___
 <h1 align="center"> ᘜᗴT ᑭᗩIᖇ </h1>
 
 <p align="center">
-  <a href="pair-immu-md.koyeb.app/">
+  <a href="https://pair-immu-md.koyeb.app/">
     <img src="./Immu/get-session-btn.svg" alt="GET SESSION" width="260"/>
   </a>
 </p>
