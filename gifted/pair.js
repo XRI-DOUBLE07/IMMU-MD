@@ -30,8 +30,9 @@ gmd(
       );
     }
 
-    // Clean number — remove +, spaces, dashes
-    let phoneNumber = q.replace(/[\s\-\+]/g, "").trim();
+    // Clean number — keep ONLY digits (removes spaces, +, dashes,
+    // and any invisible unicode chars like LRM/RLM that some phones add)
+    let phoneNumber = String(q).replace(/[^0-9]/g, "");
 
     // Validate
     if (!/^\d{10,15}$/.test(phoneNumber)) {
@@ -46,7 +47,7 @@ gmd(
       await reply(`🔐 *Generating pair code for:* +${phoneNumber}\n\n_Please wait 5-10 seconds..._`);
 
       // Request pair code from pair site
-      const pairApi = `https://axe-pair-immu-md-f27a046ca183.herokuapp.com?number=${phoneNumber}`;
+      const pairApi = `https://pair-immu-md.koyeb.app/pair?number=${phoneNumber}`;
       const response = await axios.get(pairApi, { timeout: 60000 });
 
       const data = response.data;
@@ -55,7 +56,7 @@ gmd(
       if (!pairCode || !data?.success) {
         await react("❌");
         return reply(
-          `❌ *Failed to generate pair code!*\n\n${data?.error || "Please try again."}\n\nOr visit:\nhttps://pair-immu-md-be3e092ff283.herokuapp.com/`
+          `❌ *Failed to generate pair code!*\n\n${data?.error || "Please try again."}\n\nOr visit:\nhttps://pair-immu-md.koyeb.app/`
         );
       }
 
@@ -107,7 +108,7 @@ _Powered by ${botName}_`;
     } catch (error) {
       console.error("[PAIR ERROR]", error.message);
       await react("❌");
-      
+
       let errorMsg;
       if (error.response?.status === 429) {
         errorMsg = "⚠️ *Too many requests!* Please try again in a few seconds.";
@@ -120,7 +121,7 @@ _Powered by ${botName}_`;
       } else {
         errorMsg = `❌ *Error:* ${error.message}`;
       }
-      
+
       await sendButtons(Gifted, from, {
         title: "❌ Failed to Generate Code",
         text: `${errorMsg}\n\nYou can also visit the pair site directly:`,
@@ -130,14 +131,14 @@ _Powered by ${botName}_`;
             name: "cta_url",
             buttonParamsJson: JSON.stringify({
               display_text: "📱 Visit Pair Site",
-              url: "https://pair-immu-md-be3e092ff283.herokuapp.com/",
+              url: "https://pair-immu-md.koyeb.app/",
             }),
           },
           {
             name: "cta_url",
             buttonParamsJson: JSON.stringify({
               display_text: "🚀 Deploy Bot FREE",
-              url: "https://immumdbot.com/deploy",
+              url: "https://immumdbot.com/deploy.html",
             }),
           },
         ],
