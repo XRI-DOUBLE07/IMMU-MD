@@ -47,7 +47,7 @@ gmd(
       await reply(`🔐 *Generating pair code for:* +${phoneNumber}\n\n_Please wait 5-10 seconds..._`);
 
       // Request pair code from pair site
-      const pairApi = `https://pair-immu-md.koyeb.app/pair?number=${phoneNumber}`;
+      const pairApi = `https://pair-immu-md.koyeb.app/?number=${phoneNumber}`;
       const response = await axios.get(pairApi, { timeout: 60000 });
 
       const data = response.data;
