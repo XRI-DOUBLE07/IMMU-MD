@@ -220,7 +220,7 @@ gmd(
         text: `🤖 *WAIT!*\n\nPleas Note *🔞Downloading these content can banned your WhatsApp* — not real cats!\n\This content is strictly for mature audiences only. Please confirm before proceeding.`,
         footer: `> *${botFooter}*`,
         buttons: [
-          { id: downloadKey, text: "STILL DOWNLOAD 💋🔥" },
+          { id: downloadKey, text: "STILL DOWNLOAD🔥" },
           { id: cancelKey,   text: "CANCEL" },
         ],
       });
