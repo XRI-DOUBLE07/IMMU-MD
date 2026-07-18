@@ -113,6 +113,115 @@ gmd(
     },
 );
 
+// ─── Vercel downloader API (used by fb / tiktok / ig) ───
+// Set SMD_SITE_URL in the environment to point at your own deployment.
+const SMD_SITE_URL = (
+    process.env.SMD_SITE_URL || "https://immu-md-api.vercel.app"
+).replace(/\/+$/, "");
+
+const SMD_EMOJI = {
+    tiktok: "🎵",
+    instagram: "📸",
+    facebook: "📘",
+    twitter: "🐦",
+    youtube: "▶️",
+};
+
+// Call the downloader site and return its parsed JSON result
+async function smdFetch(url) {
+    const { data } = await axios.post(
+        `${SMD_SITE_URL}/api/download`,
+        { url, type: "video" },
+        { timeout: 90000, headers: { "Content-Type": "application/json" } },
+    );
+    if (!data || !data.success) {
+        throw new Error(data?.error || "Media could not be fetched");
+    }
+    return data;
+}
+
+// The site returns some URLs relative to itself — make them absolute
+function smdFullUrl(u) {
+    if (!u) return null;
+    return u.startsWith("/") ? SMD_SITE_URL + u : u;
+}
+
+// Shared handler for Facebook, TikTok and Instagram
+async function smdHandle(from, Gifted, conText, expectedPlatform) {
+    const { q, reply, react, botFooter } = conText;
+
+    if (!q) {
+        await react("❌");
+        return reply("Please provide a link.");
+    }
+
+    const urlMatch = q.match(/https?:\/\/[^\s]+/i);
+    if (!urlMatch) {
+        await react("❌");
+        return reply("No valid link found. Please paste a correct URL.");
+    }
+    const url = urlMatch[0];
+
+    await react("⏳");
+
+    try {
+        const data = await smdFetch(url);
+        const meta = data.metadata || {};
+        const platform = meta.platform || expectedPlatform;
+        const emo = SMD_EMOJI[platform] || "📥";
+
+        // Photo carousel / multiple images (TikTok slides, Instagram albums)
+        const images = (meta.images || []).map((i) => i.url).filter(Boolean);
+        if ((meta.isPhotoCarousel || images.length > 0) && !data.downloadUrl) {
+            if (!images.length) {
+                await react("❌");
+                return reply("No images found.");
+            }
+            await react("🖼️");
+            const max = Math.min(images.length, 15);
+            for (let i = 0; i < max; i++) {
+                await Gifted.sendMessage(from, {
+                    image: { url: smdFullUrl(images[i]) },
+                    caption:
+                        i === 0
+                            ? `${emo} *${platform.toUpperCase()}*${meta.author ? `\n👤 ${meta.author}` : ""}\n\n> ${botFooter}`
+                            : undefined,
+                });
+                await new Promise((r) => setTimeout(r, 600));
+            }
+            await react("✅");
+            return;
+        }
+
+        // Single video
+        if (!data.downloadUrl) {
+            await react("❌");
+            return reply(
+                "Download URL not available (this post may be private or embed-only).",
+            );
+        }
+
+        const caption =
+            `╭━━〔 *${emo} ${platform.toUpperCase()}* 〕━━╮\n┃` +
+            (meta.author ? `\n┃ 👤 *${meta.author}*` : "") +
+            (meta.title ? `\n┃ 📝 ${String(meta.title).substring(0, 120)}` : "") +
+            `\n┃\n╰━━━━━━━━━━━━━━━━╯\n\n> ${botFooter}`;
+
+        await Gifted.sendMessage(from, {
+            video: { url: smdFullUrl(data.downloadUrl) },
+            caption,
+            mimetype: "video/mp4",
+        });
+        await react("✅");
+    } catch (err) {
+        await react("❌");
+        const emsg = err.response?.data?.error || err.message;
+        return reply(
+            `Download failed: ${emsg}\n\nTry another link or try again later.`,
+        );
+    }
+}
+
 gmd(
     {
         pattern: "fb",
@@ -121,199 +230,7 @@ gmd(
         aliases: ["fbdl", "facebookdl", "facebook"],
         description: "Download Facebook videos",
     },
-    async (from, Gifted, conText) => {
-        const {
-            q,
-            mek,
-            reply,
-            react,
-            botName,
-            botFooter,
-            newsletterJid,
-            gmdBuffer,
-            toAudio,
-            formatAudio,
-            GiftedTechApi,
-            GiftedApiKey,
-        } = conText;
-
-        if (!q) {
-            await react("❌");
-            return reply("Please provide a Facebook video URL");
-        }
-
-        if (!q.includes("facebook.com") && !q.includes("fb.watch")) {
-            await react("❌");
-            return reply("Please provide a valid Facebook URL");
-        }
-
-        try {
-            const apiUrl = `${GiftedTechApi}/api/download/facebook?apikey=${GiftedApiKey}&url=${encodeURIComponent(q)}`;
-            const response = await axios.get(apiUrl, { timeout: 60000 });
-
-            if (!response.data?.success || !response.data?.result) {
-                await react("❌");
-                return reply(
-                    "Failed to fetch video. Please check the URL and try again.",
-                );
-            }
-
-            const { title, duration, thumbnail, hd_video, sd_video } =
-                response.data.result;
-            const dateNow = Date.now();
-            const videoUrl = hd_video || sd_video;
-
-            const buttons = [];
-            if (hd_video)
-                buttons.push({ id: `fb_hd_${dateNow}`, text: "HD Quality" });
-            if (sd_video)
-                buttons.push({ id: `fb_sd_${dateNow}`, text: "SD Quality" });
-            buttons.push({ id: `fb_audio_${dateNow}`, text: "Audio Only" });
-
-            await sendButtons(Gifted, from, {
-                title: `${botName} FACEBOOK DOWNLOADER`,
-                text: `*Title:* ${title || "Facebook Video"}\n*Duration:* ${duration || "Unknown"}\n\n*Select download type:*`,
-                footer: botFooter,
-                image: { url: thumbnail },
-                buttons: buttons,
-            });
-
-            const handleResponse = async (event) => {
-                const messageData = event.messages[0];
-                if (!messageData.message) return;
-
-                const selectedButtonId = extractButtonId(messageData.message);
-                if (!selectedButtonId) return;
-                if (!selectedButtonId.includes(`_${dateNow}`)) return;
-
-                const isFromSameChat = messageData.key?.remoteJid === from;
-                if (!isFromSameChat) return;
-
-                await react("⬇️");
-
-                try {
-                    if (selectedButtonId.startsWith("fb_audio")) {
-                        const sourceVideo = hd_video || sd_video;
-                        if (!sourceVideo) {
-                            await react("❌");
-                            return reply(
-                                "No video available for audio extraction.",
-                                messageData,
-                            );
-                        }
-
-                        const videoBuffer = await gmdBuffer(sourceVideo);
-                        if (!videoBuffer || videoBuffer instanceof Error || !Buffer.isBuffer(videoBuffer)) {
-                            await react("❌");
-                            return reply(
-                                "Failed to download video for audio extraction. Please try again.",
-                                messageData,
-                            );
-                        }
-                        let audioBuffer;
-                        try {
-                            audioBuffer = await toAudio(videoBuffer);
-                        } catch (audioErr) {
-                            await react("❌");
-                            const errMsg = audioErr.message || String(audioErr);
-                            if (errMsg.includes('no audio')) {
-                                return reply("This video has no audio track to extract.", messageData);
-                            }
-                            return reply("Failed to convert video to audio: " + errMsg, messageData);
-                        }
-                        if (!audioBuffer || !Buffer.isBuffer(audioBuffer)) {
-                            await react("❌");
-                            return reply(
-                                "Failed to convert video to audio. The video format may not be supported.",
-                                messageData,
-                            );
-                        }
-                        const fileSize = audioBuffer.length;
-
-                        if (fileSize > MAX_MEDIA_SIZE) {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    document: audioBuffer,
-                                    fileName: `${(title || "facebook_audio").replace(/[^\w\s.-]/gi, "")}.mp3`,
-                                    mimetype: "audio/mpeg",
-                                },
-                                { quoted: messageData },
-                            );
-                        } else {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    audio: audioBuffer,
-                                    mimetype: "audio/mpeg",
-                                },
-                                { quoted: messageData },
-                            );
-                        }
-                    } else {
-                        const selectedVideoUrl = selectedButtonId.startsWith(
-                            "fb_hd",
-                        )
-                            ? hd_video
-                            : sd_video;
-
-                        if (!selectedVideoUrl) {
-                            await react("❌");
-                            return reply(
-                                "Selected quality not available.",
-                                messageData,
-                            );
-                        }
-
-                        const fileSize = await getFileSize(selectedVideoUrl);
-                        const sendAsDoc = fileSize > MAX_MEDIA_SIZE;
-
-                        if (sendAsDoc) {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    document: { url: selectedVideoUrl },
-                                    fileName: `${(title || "facebook_video").replace(/[^\w\s.-]/gi, "")}.mp4`,
-                                    mimetype: "video/mp4",
-                                    caption: `*${title || "Facebook Video"}*`,
-                                },
-                                { quoted: messageData },
-                            );
-                        } else {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    video: { url: selectedVideoUrl },
-                                    mimetype: "video/mp4",
-                                    caption: `*${title || "Facebook Video"}*`,
-                                },
-                                { quoted: messageData },
-                            );
-                        }
-                    }
-
-                    await react("✅");
-                } catch (error) {
-                    console.error("Facebook download error:", error);
-                    await react("❌");
-                    await reply(
-                        "Failed to download. Please try again.",
-                        messageData,
-                    );
-                }
-            };
-
-            Gifted.ev.on("messages.upsert", handleResponse);
-            setTimeout(
-                () => Gifted.ev.off("messages.upsert", handleResponse),
-                300000,
-            );
-        } catch (error) {
-            console.error("Facebook API error:", error);
-            await react("❌");
-            return reply("An error occurred. Please try again.");
-        }
-    },
+    async (from, Gifted, conText) => smdHandle(from, Gifted, conText, "facebook"),
 );
 
 gmd(
@@ -324,173 +241,7 @@ gmd(
         aliases: ["tiktokdl", "ttdl", "tt"],
         description: "Download TikTok videos",
     },
-    async (from, Gifted, conText) => {
-        const {
-            q,
-            mek,
-            reply,
-            react,
-            botName,
-            botFooter,
-            newsletterJid,
-            gmdBuffer,
-            toAudio,
-            formatAudio,
-            GiftedTechApi,
-            GiftedApiKey,
-        } = conText;
-
-        if (!q) {
-            await react("❌");
-            return reply("Please provide a TikTok URL");
-        }
-
-        if (!q.includes("tiktok.com")) {
-            await react("❌");
-            return reply("Please provide a valid TikTok URL");
-        }
-
-        try {
-            const endpoints = [
-                "tiktok",
-                "tiktokdlv2",
-                "tiktokdlv3",
-                "tiktokdlv4",
-            ];
-
-            const t0 = Date.now();
-            const result = await Promise.any(
-                endpoints.map(endpoint => {
-                    const apiUrl = `${GiftedTechApi}/api/download/${endpoint}?apikey=${GiftedApiKey}&url=${encodeURIComponent(q)}`;
-                    return axios.get(apiUrl, { timeout: 20000 }).then(res => {
-                        if (res.data?.success && res.data?.result) {
-                            return res.data.result;
-                        }
-                        throw new Error(`${endpoint}: no result`);
-                    });
-                })
-            ).catch(() => null);
-
-            if (!result) {
-                await react("❌");
-                return reply(
-                    "Failed to fetch TikTok video. Please try again later.",
-                );
-            }
-
-            const { title, video, music, cover, author } = result;
-            const dateNow = Date.now();
-
-            const buttons = [
-                { id: `tt_video_${dateNow}`, text: "Video" },
-                { id: `tt_audio_${dateNow}`, text: "Audio Only" },
-            ];
-
-            await sendButtons(Gifted, from, {
-                title: `${botName} TIKTOK DOWNLOADER`,
-                text: `*Title:* ${title || "TikTok Video"}\n*Author:* ${author?.name || "Unknown"}\n\n*Select download type:*`,
-                footer: botFooter,
-                image: { url: cover },
-                buttons: buttons,
-            });
-
-            const handleResponse = async (event) => {
-                const messageData = event.messages[0];
-                if (!messageData.message) return;
-
-                const selectedButtonId = extractButtonId(messageData.message);
-                if (!selectedButtonId) return;
-                if (!selectedButtonId.includes(`_${dateNow}`)) return;
-
-                const isFromSameChat = messageData.key?.remoteJid === from;
-                if (!isFromSameChat) return;
-
-                await react("⬇️");
-
-                try {
-                    if (selectedButtonId.startsWith("tt_video")) {
-                        const fileSize = await getFileSize(video);
-                        const sendAsDoc = fileSize > MAX_MEDIA_SIZE;
-
-                        if (sendAsDoc) {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    document: { url: video },
-                                    fileName: `${(title || "tiktok_video").replace(/[^\w\s.-]/gi, "")}.mp4`,
-                                    mimetype: "video/mp4",
-                                    caption: `*${title || "TikTok Video"}*`,
-                                },
-                                { quoted: messageData },
-                            );
-                        } else {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    video: { url: video },
-                                    mimetype: "video/mp4",
-                                    caption: `*${title || "TikTok Video"}*`,
-                                },
-                                { quoted: messageData },
-                            );
-                        }
-                    } else if (selectedButtonId.startsWith("tt_audio")) {
-                        let audioBuffer;
-
-                        if (music) {
-                            audioBuffer = await gmdBuffer(music);
-                            audioBuffer = await formatAudio(audioBuffer);
-                        } else {
-                            const videoBuffer = await gmdBuffer(video);
-                            audioBuffer = await toAudio(videoBuffer);
-                        }
-
-                        const fileSize = audioBuffer.length;
-
-                        if (fileSize > MAX_MEDIA_SIZE) {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    document: audioBuffer,
-                                    fileName: `${(title || "tiktok_audio").replace(/[^\w\s.-]/gi, "")}.mp3`,
-                                    mimetype: "audio/mpeg",
-                                },
-                                { quoted: messageData },
-                            );
-                        } else {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    audio: audioBuffer,
-                                    mimetype: "audio/mpeg",
-                                },
-                                { quoted: messageData },
-                            );
-                        }
-                    }
-
-                    await react("✅");
-                } catch (error) {
-                    console.error("TikTok download error:", error);
-                    await react("❌");
-                    await reply(
-                        "Failed to download. Please try again.",
-                        messageData,
-                    );
-                }
-            };
-
-            Gifted.ev.on("messages.upsert", handleResponse);
-            setTimeout(
-                () => Gifted.ev.off("messages.upsert", handleResponse),
-                300000,
-            );
-        } catch (error) {
-            console.error("TikTok API error:", error);
-            await react("❌");
-            return reply("An error occurred. Please try again.");
-        }
-    },
+    async (from, Gifted, conText) => smdHandle(from, Gifted, conText, "tiktok"),
 );
 
 gmd(
@@ -677,152 +428,7 @@ gmd(
         aliases: ["insta", "instadl", "igdl", "instagram"],
         description: "Download Instagram reels/videos",
     },
-    async (from, Gifted, conText) => {
-        const {
-            q,
-            mek,
-            reply,
-            react,
-            botName,
-            botFooter,
-            newsletterJid,
-            gmdBuffer,
-            toAudio,
-            formatAudio,
-            GiftedTechApi,
-            GiftedApiKey,
-        } = conText;
-
-        if (!q) {
-            await react("❌");
-            return reply("Please provide an Instagram URL");
-        }
-
-        if (!q.includes("instagram.com")) {
-            await react("❌");
-            return reply("Please provide a valid Instagram URL");
-        }
-
-        try {
-            const apiUrl = `${GiftedTechApi}/api/download/instadl?apikey=${GiftedApiKey}&url=${encodeURIComponent(q)}`;
-            const response = await axios.get(apiUrl, { timeout: 60000 });
-
-            if (!response.data?.success || !response.data?.result) {
-                await react("❌");
-                return reply(
-                    "Failed to fetch content. Please check the URL and try again.",
-                );
-            }
-
-            const { thumbnail, download_url } = response.data.result;
-
-            if (!download_url) {
-                await react("❌");
-                return reply("No downloadable content found.");
-            }
-
-            const dateNow = Date.now();
-
-            await sendButtons(Gifted, from, {
-                title: `${botName} INSTAGRAM DOWNLOADER`,
-                text: `*Select download type:*`,
-                footer: botFooter,
-                image: { url: thumbnail },
-                buttons: [
-                    { id: `ig_video_${dateNow}`, text: "Video" },
-                    { id: `ig_audio_${dateNow}`, text: "Audio Only" },
-                ],
-            });
-
-            const handleResponse = async (event) => {
-                const messageData = event.messages[0];
-                if (!messageData.message) return;
-
-                const selectedButtonId = extractButtonId(messageData.message);
-                if (!selectedButtonId) return;
-                if (!selectedButtonId.includes(`_${dateNow}`)) return;
-
-                const isFromSameChat = messageData.key?.remoteJid === from;
-                if (!isFromSameChat) return;
-
-                await react("⬇️");
-
-                try {
-                    if (selectedButtonId.startsWith("ig_audio")) {
-                        const videoBuffer = await gmdBuffer(download_url);
-                        const audioBuffer = await toAudio(videoBuffer);
-                        const fileSize = audioBuffer.length;
-
-                        if (fileSize > MAX_MEDIA_SIZE) {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    document: audioBuffer,
-                                    fileName: "instagram_audio.mp3",
-                                    mimetype: "audio/mpeg",
-                                },
-                                { quoted: messageData },
-                            );
-                        } else {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    audio: audioBuffer,
-                                    mimetype: "audio/mpeg",
-                                },
-                                { quoted: messageData },
-                            );
-                        }
-                    } else {
-                        const fileSize = await getFileSize(download_url);
-                        const sendAsDoc = fileSize > MAX_MEDIA_SIZE;
-
-                        if (sendAsDoc) {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    document: { url: download_url },
-                                    fileName: "instagram_video.mp4",
-                                    mimetype: "video/mp4",
-                                    caption: `*Downloaded via ${botName}*`,
-                                },
-                                { quoted: messageData },
-                            );
-                        } else {
-                            await Gifted.sendMessage(
-                                from,
-                                {
-                                    video: { url: download_url },
-                                    mimetype: "video/mp4",
-                                    caption: `*Downloaded via ${botName}*`,
-                                },
-                                { quoted: messageData },
-                            );
-                        }
-                    }
-
-                    await react("✅");
-                } catch (error) {
-                    console.error("Instagram download error:", error);
-                    await react("❌");
-                    await reply(
-                        "Failed to download. Please try again.",
-                        messageData,
-                    );
-                }
-            };
-
-            Gifted.ev.on("messages.upsert", handleResponse);
-            setTimeout(
-                () => Gifted.ev.off("messages.upsert", handleResponse),
-                300000,
-            );
-        } catch (error) {
-            console.error("Instagram API error:", error);
-            await react("❌");
-            return reply("An error occurred. Please try again.");
-        }
-    },
+    async (from, Gifted, conText) => smdHandle(from, Gifted, conText, "instagram"),
 );
 
 gmd(
