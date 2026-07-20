@@ -1013,7 +1013,29 @@ function buildContext(ms, settings, helpers, data) {
 }
 
 (async () => {
-    await loadSession();
-    await loadBotSettings();
-    startGifted();
+    // No session yet: stay online and wait instead of crashing.
+    // Heroku restarts this dyno automatically the moment SESSION_ID is set,
+    // so the bot connects within seconds of being paired.
+    if (!config.SESSION_ID || !String(config.SESSION_ID).trim()) {
+        console.log("⏳ No SESSION_ID yet — waiting to be paired. Server stays online.");
+        return;
+    }
+
+    // A session is present: start normally. On a transient failure retry
+    // instead of killing the dyno, so a temporary network error does not
+    // leave the slot dead until someone restarts it by hand.
+    let attempt = 0;
+    const boot = async () => {
+        attempt++;
+        try {
+            await loadSession();
+            await loadBotSettings();
+            startGifted();
+        } catch (err) {
+            console.log(`⚠️  Startup failed (attempt ${attempt}): ${err.message}`);
+            console.log("   Retrying in 30s — server stays online.");
+            setTimeout(boot, 30000);
+        }
+    };
+    boot();
 })();
