@@ -3,6 +3,7 @@ const { DisconnectReason } = require("gifted-baileys");
 const fs = require("fs-extra");
 const path = require("path");
 const { setupGroupCacheListeners } = require("./groupCache");
+const { releaseSlot } = require("./releaseSlot");
 
 const RECONNECT_DELAY = 5000;
 const MAX_RECONNECT_ATTEMPTS = 50;
@@ -108,26 +109,33 @@ const setupConnectionHandler = (
                     } catch (e) {
                         console.error("Failed to remove session:", e);
                     }
-                    process.exit(1);
+                    // The session can never recover, so hand the slot back.
+                    // On success Heroku restarts this dyno by itself.
+                    if (!(await releaseSlot("bad session"))) process.exit(1);
                     break;
 
                 case DisconnectReason.connectionReplaced:
                     console.log(
                         "Connection replaced, another new session opened",
                     );
-                    process.exit(1);
+                    // This number now lives on another session, so this
+                    // slot is no longer needed by that user.
+                    if (!(await releaseSlot("connection replaced"))) process.exit(1);
                     break;
 
                 case DisconnectReason.loggedOut:
                     console.log(
-                        "Device logged out, session file automatically deleted...please scan again",
+                        "Device logged out — releasing this slot for the next user",
                     );
                     try {
                         await fs.remove(sessionDir);
                     } catch (e) {
                         console.error("❌ Failed to remove session:", e);
                     }
-                    process.exit(1);
+                    // Clear SESSION_ID so the pair site can reuse this slot.
+                    // Heroku restarts the dyno on the config change and the
+                    // bot then waits for a new pairing.
+                    if (!(await releaseSlot("logged out"))) process.exit(1);
                     break;
 
                 case DisconnectReason.connectionClosed:
