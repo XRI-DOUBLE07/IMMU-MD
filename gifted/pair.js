@@ -1,5 +1,6 @@
 const { gmd } = require("../gift");
 const axios = require("axios");
+const { sendButtons } = require("gifted-btns");
 
 // The pairing site. Override with PAIR_SITE in .env if it ever moves.
 const PAIR_SITE = (process.env.PAIR_SITE || "https://link.immumdbot.com").replace(/\/+$/, "");
@@ -13,7 +14,7 @@ gmd(
     description: "Get pair code for IMMU MD bot deployment",
   },
   async (from, Gifted, conText) => {
-    const { q, react, reply, pushName, botName, botFooter, botPrefix } = conText;
+    const { q, react, reply, pushName, botPic, botName, botFooter, botPrefix } = conText;
 
     if (!q) {
       await react("❌");
@@ -52,9 +53,8 @@ gmd(
         );
       }
 
-      // Plain text, no interactive buttons: buttons are what triggered
-      // WhatsApp's automation flags before, and plain messages always deliver.
-      // The code sits in its own code block so it can be copied with one tap.
+      // The code also sits in a code block, so it can still be copied by
+      // long-pressing if the button ever fails to render.
       const messageText =
         `╭━━〔 *🔐 IMMU MD PAIR* 〕━━┈⊷\n` +
         `┃\n` +
@@ -71,18 +71,48 @@ gmd(
         `2. Go to *Linked devices*\n` +
         `3. Tap *Link a device* → *Link with phone number*\n` +
         `4. Enter the code above\n\n` +
-        `_Enter it now — the code expires in a minute._\n` +
-        `🌐 ${PAIR_SITE}\n\n` +
-        `> *${botFooter || botName}*`;
+        `_Enter it now — the code expires in a minute._`;
 
-      await reply(messageText);
+      const buttons = [
+        {
+          name: "cta_copy",
+          buttonParamsJson: JSON.stringify({
+            display_text: "📋 Copy Pair Code",
+            copy_code: pairCode,
+          }),
+        },
+        {
+          name: "cta_url",
+          buttonParamsJson: JSON.stringify({
+            display_text: "🌐 Open Pair Site",
+            url: PAIR_SITE,
+          }),
+        },
+      ];
+
+      // If the interactive message fails for any reason, the plain text
+      // still has to arrive — the code is the whole point of the command.
+      try {
+        await sendButtons(Gifted, from, {
+          title: "🔐 Pair Code Generated",
+          text: messageText,
+          footer: `> *${botFooter || botName}*`,
+          image: botPic ? { url: botPic } : undefined,
+          buttons,
+        });
+      } catch (btnErr) {
+        console.log("[PAIR] buttons failed, sending plain text:", btnErr.message);
+        await reply(`${messageText}\n\n🌐 ${PAIR_SITE}\n\n> *${botFooter || botName}*`);
+      }
 
       // Also deliver it to the number being paired, so the person who has
       // to type the code gets it on the phone they're typing it into.
       const targetJid = `${phoneNumber}@s.whatsapp.net`;
       if (targetJid !== from) {
         try {
-          await Gifted.sendMessage(targetJid, { text: messageText });
+          await Gifted.sendMessage(targetJid, {
+            text: `${messageText}\n\n🌐 ${PAIR_SITE}\n\n> *${botFooter || botName}*`,
+          });
         } catch (e) {
           console.log("[PAIR] could not DM the target number:", e.message);
         }
