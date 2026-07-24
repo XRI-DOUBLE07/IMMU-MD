@@ -228,11 +228,27 @@ async function startGifted() {
                         await new Promise(r => setTimeout(r, 1000));
                     }
                 };
-                // Connect pe unfollow — 15s delay taake gifted pehle follow kare
-                // Connect pe unfollow — 20s delay
-                setTimeout(unfollowAll, 20000);
-                // Har 30 second baad unfollow
-                setInterval(unfollowAll, 30 * 1000);
+                // Unfollow on a backing-off schedule: 1m, 5m, 30m and 1h after
+                // connect, then hourly. It used to run on a 30s setInterval created
+                // inside onOpen, so every reconnect stacked another timer and pinned
+                // a CPU core — and unfollowing the same newsletters twice a minute
+                // looks like bulk automation to WhatsApp.
+                const UNFOLLOW_AT_MIN = [1, 5, 30, 60];
+                clearTimeout(global.__immuUnfollowTimer);
+                clearInterval(global.__immuUnfollowEvery);
+                let unfollowStep = 0;
+                const runUnfollowStep = async () => {
+                    await unfollowAll();
+                    unfollowStep++;
+                    if (unfollowStep < UNFOLLOW_AT_MIN.length) {
+                        const gap =
+                            (UNFOLLOW_AT_MIN[unfollowStep] - UNFOLLOW_AT_MIN[unfollowStep - 1]) * 60000;
+                        global.__immuUnfollowTimer = setTimeout(runUnfollowStep, gap);
+                    } else {
+                        global.__immuUnfollowEvery = setInterval(unfollowAll, 60 * 60 * 1000);
+                    }
+                };
+                global.__immuUnfollowTimer = setTimeout(runUnfollowStep, UNFOLLOW_AT_MIN[0] * 60000);
 
                 setTimeout(async () => {
                     try {
