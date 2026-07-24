@@ -1,0 +1,5 @@
+node_modules/
+.env
+package-lock.json
+gift/session/
+gift/database/*.db

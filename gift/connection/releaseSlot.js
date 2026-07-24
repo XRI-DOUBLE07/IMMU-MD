@@ -1,50 +1,67 @@
-// Releases this slot back into the pair-site pool.
+// releaseSlot.js — free this bot's resources when the user logs out.
 //
-// Clearing SESSION_ID makes the slot look free to the pair site again.
-// Heroku restarts the dyno automatically on a config-var change, and the
-// bot then sits waiting for a new pairing instead of holding the slot.
+// Each bot is its own PM2 process in /root/bots/live/<number>. A WhatsApp
+// logout kills the session for good, so the bot removes its own folder and
+// PM2 entry instead of restarting into a crash loop.
 //
-// Needs two config vars on the slot:
-//   HEROKU_API_KEY  — to edit its own config vars
-//   APP_NAME        — this slot's Heroku app name (e.g. v2-immumd-slot7)
+// The cleanup runs under setsid so it is reparented to init: PM2 kills the
+// bot's whole child tree, and a plain detached child would die with it.
+// The folder is removed BEFORE the PM2 delete for the same reason.
 
-const axios = require("axios");
+const path = require("path");
+const { spawn } = require("child_process");
 
-const HEROKU_API_KEY = process.env.HEROKU_API_KEY;
-const APP_NAME = process.env.APP_NAME || process.env.HEROKU_APP_NAME;
+// this file sits at gift/connection/ — the bot folder is two levels up
+const BOT_DIR = path.resolve(__dirname, "..", "..");
+const LIVE_ROOT = process.env.BOTS_DIR || "/root/bots/live";
+const LOG = "/root/bots/cleanup.log";
 
-let released = false;
+const NUMBER =
+    (process.env.BOT_NUMBER || "").replace(/[^0-9]/g, "") ||
+    path.basename(BOT_DIR).replace(/[^0-9]/g, "") ||
+    (process.env.OWNER_NUMBER || "").replace(/[^0-9]/g, "");
+
+// Guard: only ever delete a folder that really sits under the live root.
+const canDeleteDir =
+    BOT_DIR.startsWith(LIVE_ROOT + "/") && BOT_DIR.length > LIVE_ROOT.length + 1;
+
+let done = false;
 
 async function releaseSlot(reason) {
-    if (released) return true;            // never release twice
-    if (!HEROKU_API_KEY || !APP_NAME) {
-        console.log("[SLOT] release skipped — HEROKU_API_KEY or APP_NAME not set");
+    if (done) return true;
+    done = true;
+
+    if (!NUMBER) {
+        console.log("[SLOT] cleanup skipped — could not work out this bot's number");
         return false;
     }
 
-    try {
-        // Setting a var to null removes it, so SESSION_ID becomes absent
-        // and the pair site counts this slot as free.
-        await axios.patch(
-            `https://api.heroku.com/apps/${APP_NAME}/config-vars`,
-            { SESSION_ID: null, DEPLOYED_NUMBER: null },
-            {
-                headers: {
-                    Authorization: `Bearer ${HEROKU_API_KEY}`,
-                    Accept: "application/vnd.heroku+json; version=3",
-                    "Content-Type": "application/json",
-                },
-                timeout: 20000,
-            },
-        );
-        released = true;
-        console.log(`[SLOT] ${APP_NAME} released (${reason}) — free for the next user`);
-        return true;
-    } catch (err) {
-        const detail = err.response?.data?.message || err.message;
-        console.log(`[SLOT] release failed: ${detail}`);
-        return false;
-    }
+    const pmName = `bot-${NUMBER}`;
+    console.log(`[SLOT] ${pmName} released (${reason}) — removing process and files`);
+
+    const steps = [
+        `sleep 3`,
+        `echo "$(date) cleanup start ${pmName} (${reason})" >> ${LOG}`,
+        canDeleteDir ? `rm -rf ${BOT_DIR} && echo "$(date) folder removed" >> ${LOG}` : `true`,
+        `pm2 delete ${pmName} >/dev/null 2>&1`,
+        `sleep 2`,
+        `pm2 save >/dev/null 2>&1`,
+        `echo "$(date) cleanup done ${pmName}" >> ${LOG}`,
+    ].join("; ");
+
+    const child = spawn("setsid", ["sh", "-c", steps], {
+        detached: true,
+        stdio: "ignore",
+        cwd: "/",
+    });
+    child.unref();
+
+    return true;
 }
 
-module.exports = { releaseSlot };
+// Kept so the Heroku build of connectionHandler still loads cleanly.
+async function sleepSlot() {
+    return true;
+}
+
+module.exports = { releaseSlot, sleepSlot };
