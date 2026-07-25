@@ -73,7 +73,10 @@ const {
     setupConnectionHandler,
     setupGroupEventsListeners,
     initializeLidStore,
+    loadPersistedLidMappings,
+    persistLidMapping,
 } = require("./gift");
+const { globalLidMapping } = require("gifted-baileys/lib/Utils/lid-mapping");
 
 const {
     saveAntiDelete,
@@ -106,8 +109,14 @@ async function resolveRealJid(Gifted, jid) {
         if (cached) return cached;
     } catch (_) {}
     try {
-        const resolved = await Gifted.getJidFromLid(jid);
-        if (resolved && !resolved.endsWith('@lid')) return resolved;
+        // Populated internally by gifted-baileys from any LID<->PN pairing it
+        // observes, not scoped to a single chat — broader coverage than the
+        // group-only cache above.
+        const fromLib = globalLidMapping.get?.(jid);
+        if (fromLib && !fromLib.endsWith('@lid')) {
+            persistLidMapping(jid, fromLib).catch(() => {});
+            return fromLib;
+        }
     } catch (_) {}
     try {
         const { getLidMappingFromDb } = require('./gift/database/lidMapping');
@@ -204,6 +213,7 @@ async function startGifted() {
                 const s = await getAllSettings();
                 await safeNewsletterFollow(Gifted, s.NEWSLETTER_JID);
                 await safeGroupAcceptInvite(Gifted, s.GC_JID);
+                await loadPersistedLidMappings();
                 await initializeLidStore(Gifted);
 
                 // Gifted follow kare pehle, phir hum unfollow karein
@@ -611,7 +621,7 @@ function setupStatusHandlers(Gifted) {
             const participantJid = await resolveRealJid(Gifted, rawParticipant);
 
             // AUTO VIEW STATUS — works on its own; auto-like and auto-reply require this to be ON
-            const shouldView = s.AUTO_READ_STATUS === "true";
+            const shouldView = s.AUTO_READ_STATUS === "true" && !mek.key.fromMe;
 
             const readKey = (participantJid && participantJid !== mek.key.participant)
                 ? { ...mek.key, participant: participantJid }

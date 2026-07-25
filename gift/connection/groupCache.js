@@ -27,8 +27,12 @@ const updateLidMappingsFromMetadata = (metadata) => {
     for (const p of metadata.participants) {
         const lid = p.lid || p.id;
         const jid = p.pn || p.jid;
-        if (lid && jid) {
+        if (lid && jid && lid.endsWith("@lid") && jid.endsWith("@s.whatsapp.net")) {
             storeLidMapping(lid, jid);
+            try {
+                const { persistLidMapping } = require("../database/lidMapping");
+                persistLidMapping(lid, jid).catch(() => {});
+            } catch (_) {}
         }
     }
 };
