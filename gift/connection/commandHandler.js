@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
+const { globalLidMapping } = require('gifted-baileys');
 const { evt, commands } = require('../gmdCmds');
 const { standardizeJid } = require('./serializer');
 const { getGroupMetadata, getLidMapping } = require('./groupCache');
@@ -181,7 +182,21 @@ const buildSuperUsers = async (settings, getSudoNumbers, botId, ownerNumber) => 
         ...(sudoNumbersFromFile || []).map(num => `${num}@s.whatsapp.net`)
     ].map(jid => standardizeJid(jid)).filter(Boolean);
 
-    return Array.from(new Set(superUser));
+    // Business accounts are addressed by LID, so a super user can show up as
+    // '<id>@lid' with no phone number attached. Registering the LID form of
+    // each one too makes the check work whichever way the sender arrives.
+    const withLids = superUser.slice();
+    for (const jid of superUser) {
+        if (!jid || jid.endsWith('@lid')) continue;
+        try {
+            const lid = globalLidMapping && globalLidMapping.getLidFromPn
+                ? globalLidMapping.getLidFromPn(jid)
+                : null;
+            if (lid) withLids.push(standardizeJid(lid));
+        } catch (e) { /* ignore, the phone form is still registered */ }
+    }
+
+    return Array.from(new Set(withLids));
 };
 
 module.exports = {

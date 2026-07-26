@@ -1,5 +1,5 @@
-const { getContentType, downloadContentFromMessage, downloadMediaMessage } = require('gifted-baileys');
-const { getLidMapping } = require('./groupCache');
+const { getContentType, downloadContentFromMessage, downloadMediaMessage, globalLidMapping } = require('gifted-baileys');
+const { getLidMapping, storeLidMapping } = require('./groupCache');
 
 const standardizeJid = (jid) => {
     if (!jid) return '';
@@ -24,6 +24,18 @@ const convertLidToJid = (lid) => {
     if (!lid.endsWith('@lid')) return lid;
     const cached = getLidMapping(lid);
     if (cached) return cached;
+    // Baileys maintains its own LID -> phone table, filled while decoding every
+    // incoming stanza. Business accounts are addressed by LID, so this is often
+    // the only place the real number is known.
+    try {
+        const resolved = globalLidMapping && globalLidMapping.getPnFromLid
+            ? globalLidMapping.getPnFromLid(lid)
+            : null;
+        if (resolved) {
+            storeLidMapping(lid, resolved);
+            return resolved.toLowerCase();
+        }
+    } catch (e) { /* fall through and return the raw lid */ }
     return lid;
 };
 
@@ -44,9 +56,21 @@ const serializeMessage = async (ms, Gifted, settings = {}) => {
     const from = isMessageYourself ? botId : standardizeJid(ms.key.remoteJid);
     const isGroup = from.endsWith('@g.us');
     
-    const sendr = ms.key.fromMe 
-        ? (Gifted.user.id.split(':')[0] + '@s.whatsapp.net' || Gifted.user.id) 
-        : (ms.key.senderPn || ms.key.participantPn || ms.key.participantAlt || ms.key.remoteJidAlt || ms.key.remoteJid || ms.key.participant);
+    // botId is already normalised. The old code appended '@s.whatsapp.net' to
+    // whatever came back, producing '123@lid@s.whatsapp.net' on Business
+    // accounts whose own id is a LID.
+    // 'participant' must be checked before 'remoteJid': inside a group
+    // remoteJid is the group itself, not the person who sent the message.
+    const sendr = ms.key.fromMe
+        ? botId
+        : convertLidToJid(standardizeJid(
+            ms.key.senderPn ||
+            ms.key.participantPn ||
+            ms.key.participantAlt ||
+            ms.key.remoteJidAlt ||
+            ms.key.participant ||
+            ms.key.remoteJid
+        ));
     
     let body = '';
     let isButtonResponse = false;
