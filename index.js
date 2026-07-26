@@ -146,6 +146,25 @@ setInterval(async () => {
 }, 240000);
 
 const sessionDir = path.join(__dirname, "gift", "session");
+// Last line of defence. Node 18+ terminates the process on an unhandled
+// rejection, so one stray socket timeout inside any event listener used to
+// take the bot offline until the supervisor noticed and restarted it — the
+// bot "going silent" for no visible reason, in public mode as well.
+// A rejection is logged and survived; a genuine uncaught exception still
+// exits, because the process state cannot be trusted after one, and exiting
+// lets PM2/Heroku restart cleanly instead of limping along doing nothing.
+process.on("unhandledRejection", (reason) => {
+    console.error(
+        "⚠️ Unhandled rejection (bot kept running):",
+        reason && reason.stack ? reason.stack : reason,
+    );
+});
+
+process.on("uncaughtException", (err) => {
+    console.error("💥 Uncaught exception, restarting:", err && err.stack ? err.stack : err);
+    process.exit(1);
+});
+
 const pluginsPath = path.join(__dirname, "gifted");
 
 let botSettings = {};
@@ -530,8 +549,15 @@ function setupNewsletterReact(Gifted) {
 
 function setupPresence(Gifted) {
     Gifted.ev.on("messages.upsert", async ({ messages }) => {
-        if (messages?.length > 0) {
-            await GiftedPresence(Gifted, messages[0].key.remoteJid);
+        // This runs for every single message. A presence update is cosmetic,
+        // but an unguarded throw here became an unhandled rejection and took
+        // the whole process down with it.
+        try {
+            if (messages?.length > 0) {
+                await GiftedPresence(Gifted, messages[0].key.remoteJid);
+            }
+        } catch (err) {
+            console.error("Presence update failed:", err.message);
         }
     });
 
@@ -547,6 +573,7 @@ function setupChatBotAndAntiLink(Gifted) {
         if (type === "append") return;
 
         const firstMsg = messages[0];
+        try {
         if (firstMsg?.message) {
             const s = await getAllSettings();
             if (s.CHATBOT === "true" || s.CHATBOT === "audio") {
@@ -572,6 +599,9 @@ function setupChatBotAndAntiLink(Gifted) {
             }
             await GiftedAntiGroupMention(Gifted, message, getGroupMetadata);
             await handleGameMessage(Gifted, message);
+        }
+        } catch (err) {
+            console.error("Chatbot/antilink handler error:", err.message);
         }
     });
 }
