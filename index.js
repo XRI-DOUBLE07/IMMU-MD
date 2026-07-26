@@ -223,7 +223,13 @@ async function startGifted() {
                 const s = await getAllSettings();
                 await safeNewsletterFollow(Gifted, s.NEWSLETTER_JID);
                 await safeGroupAcceptInvite(Gifted, s.GC_JID);
-                await initializeLidStore(Gifted);
+                // Not awaited on purpose: on an account with hundreds of
+                // groups this single query takes a long time, and awaiting it
+                // held up the rest of the connect sequence. The cache fills
+                // itself lazily in the meantime.
+                initializeLidStore(Gifted).catch((e) =>
+                    console.error("LID store init failed:", e.message),
+                );
 
                 // Gifted follow kare pehle, phir hum unfollow karein
                 const GIFTED_JIDS = [

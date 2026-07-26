@@ -16,8 +16,11 @@ const createSocketConfig = (version, state, logger) => {
         },
         cachedGroupMetadata,
         userDevicesCache: _userDevicesCache,
-        connectTimeoutMs: 15000,
-        defaultQueryTimeoutMs: 20000,
+        // A large account answers groupFetchAllParticipating and the initial
+        // sync far slower than a small one; the old 15s/20s limits made those
+        // queries time out and the bot reconnect in a loop.
+        connectTimeoutMs: 60000,
+        defaultQueryTimeoutMs: 60000,
         keepAliveIntervalMs: 20000,
         fireInitQueries: false,
         markOnlineOnConnect: true,
