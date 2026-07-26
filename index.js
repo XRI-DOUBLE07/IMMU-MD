@@ -665,7 +665,12 @@ const processedMessages = new Set();
 const BOT_START_TIME = Date.now();
 
 function setupCommandHandler(Gifted) {
-    Gifted.ev.on("messages.upsert", async ({ messages, type }) => {
+    // Everything below used to run as the event callback itself, with no catch
+    // around it. Any throw before the inner try — a failed settings lookup, a
+    // failed read receipt, a groupMetadata timeout — aborted the whole pipeline
+    // and the command was dropped without a word to the user. Hence the bot
+    // going quiet at random, in public mode too.
+    const handleCommandUpsert = async ({ messages, type }) => {
         if (type === "append") return;
 
         const ms = messages[0];
@@ -753,12 +758,23 @@ function setupCommandHandler(Gifted) {
         } else if (autoReadMode === "commands" && isCommand) {
             shouldRead = true;
         }
-        if (shouldRead) await Gifted.readMessages([ms.key]);
+        if (shouldRead) {
+            try {
+                await Gifted.readMessages([ms.key]);
+            } catch (readErr) {
+                // A read receipt is cosmetic; never let it stop the command.
+                console.error("Auto-read failed:", readErr.message);
+            }
+        }
 
         const bodyCmd = findBodyCommand(body);
-        if (bodyCmd && bodyCmd.function) {
-            if (settings.MODE?.toLowerCase() === "private" && !isSuperUser)
-                return;
+        // This block used to `return` when the bot was private and the sender
+        // was not a super user — which skipped the real command dispatch below
+        // as well, because a body pattern only has to appear anywhere in the
+        // text to match.
+        const bodyAllowed =
+            settings.MODE?.toLowerCase() !== "private" || isSuperUser;
+        if (bodyCmd && bodyCmd.function && bodyAllowed) {
             try {
                 const helpers = createHelpers(Gifted, ms, from);
                 const conText = buildContext(ms, settings, helpers, {
@@ -872,7 +888,13 @@ function setupCommandHandler(Gifted) {
                 }
             }
         }
-    });
+    };
+
+    Gifted.ev.on("messages.upsert", (upsert) =>
+        handleCommandUpsert(upsert).catch((err) =>
+            console.error("Command pipeline error:", err),
+        ),
+    );
 }
 
 function setupGiftedHelpers(Gifted, from) {
