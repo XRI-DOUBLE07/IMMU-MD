@@ -39,39 +39,8 @@ const convertLidToJid = (lid) => {
     return lid;
 };
 
-// WhatsApp delivers many messages inside a wrapper rather than at the top
-// level, and iOS does it far more often than Android:
-//   deviceSentMessage  - anything you send from your own linked phone
-//   ephemeralMessage   - every message in a chat with disappearing messages on
-//   viewOnceMessage*   - view-once media
-// Nothing below looked inside these, so getContentType returned the wrapper's
-// own name, body stayed empty, and no command was ever recognised.
-const unwrapMessageContent = (content) => {
-    let inner = content;
-    for (let depth = 0; depth < 5 && inner; depth++) {
-        const next =
-            inner.ephemeralMessage?.message ||
-            inner.deviceSentMessage?.message ||
-            inner.viewOnceMessage?.message ||
-            inner.viewOnceMessageV2?.message ||
-            inner.viewOnceMessageV2Extension?.message ||
-            inner.documentWithCaptionMessage?.message ||
-            inner.editedMessage?.message;
-        if (!next) break;
-        inner = next;
-    }
-    return inner;
-};
-
 const serializeMessage = async (ms, Gifted, settings = {}) => {
     if (!ms?.message || !ms?.key) return null;
-
-    const unwrapped = unwrapMessageContent(ms.message);
-    if (unwrapped && unwrapped !== ms.message) {
-        // Kept in case anything needs the envelope it arrived in.
-        ms.originalMessage = ms.message;
-        ms.message = unwrapped;
-    }
 
     const botId = standardizeJid(Gifted.user?.id);
     const type = getContentType(ms.message);
@@ -141,8 +110,6 @@ const serializeMessage = async (ms, Gifted, settings = {}) => {
         body = ms.message.imageMessage.caption;
     } else if (type === 'videoMessage' && ms.message.videoMessage.caption) {
         body = ms.message.videoMessage.caption;
-    } else if (type === 'documentMessage' && ms.message.documentMessage.caption) {
-        body = ms.message.documentMessage.caption;
     }
 
     const botPrefix = settings.PREFIX || '.';
