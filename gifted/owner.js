@@ -652,7 +652,7 @@ gmd(
 gmd(
   {
     pattern: "vv",
-    aliases: ["‎", "reveal"],
+    aliases: ["‎", "reveal", "\u{1F622}", "\u{1F975}", "\u2764\uFE0F", "\u2764"],
     react: "🙄",
     category: "owner",
     description: "Reveal View Once Media",
