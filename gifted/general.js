@@ -3,7 +3,6 @@ const { gmd, commands, monospace, formatBytes } = require("../gift"),
   axios = require("axios"),
   BOT_START_TIME = Date.now(),
   { totalmem: totalMemoryBytes, freemem: freeMemoryBytes } = require("os"),
-  moment = require("moment-timezone"),
   more = String.fromCharCode(8206),
   readmore = more.repeat(4001),
   ram = `${formatBytes(freeMemoryBytes)}/${formatBytes(totalMemoryBytes)}`;

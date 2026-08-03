@@ -4,7 +4,6 @@ const fsA = require("node:fs");
 const { S_WHATSAPP_NET } = require("gifted-baileys");
 const { Jimp } = require("jimp");
 const path = require("path");
-const moment = require("moment-timezone");
 const {
   groupCache,
   getGroupMetadata,
@@ -302,9 +301,36 @@ gmd(
         if (setAt && setAt !== "Not Available") {
           try {
             const tz = timeZone || "Asia/Karachi";
-            formattedDate = moment(setAt)
-              .tz(tz)
-              .format("dddd, MMMM Do YYYY, h:mm A z");
+            const date = new Date(setAt);
+            const formatter = new Intl.DateTimeFormat("en-US", {
+              timeZone: tz,
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+              timeZoneName: "short"
+            });
+            const parts = formatter.formatToParts(date);
+            const dayOfWeek = parts.find(p => p.type === "weekday")?.value || "";
+            const monthName = parts.find(p => p.type === "month")?.value || "";
+            const dayNum = parts.find(p => p.type === "day")?.value || "";
+            const year = parts.find(p => p.type === "year")?.value || "";
+            const hour = parts.find(p => p.type === "hour")?.value || "";
+            const minute = parts.find(p => p.type === "minute")?.value || "";
+            const period = parts.find(p => p.type === "dayPeriod")?.value || "";
+            const tzName = parts.find(p => p.type === "timeZoneName")?.value || "";
+            const getDaySuffix = (day) => {
+              if (day >= 11 && day <= 13) return "th";
+              const lastDigit = day % 10;
+              if (lastDigit === 1) return "st";
+              if (lastDigit === 2) return "nd";
+              if (lastDigit === 3) return "rd";
+              return "th";
+            };
+            formattedDate = `${dayOfWeek}, ${monthName} ${dayNum}${getDaySuffix(parseInt(dayNum))} ${year}, ${hour}:${minute} ${period} ${tzName}`;
           } catch (e) {}
         }
 
