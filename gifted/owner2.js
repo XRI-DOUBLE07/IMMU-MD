@@ -4,7 +4,6 @@ const fsA = require("node:fs");
 const { S_WHATSAPP_NET } = require("gifted-baileys");
 const { Jimp } = require("jimp");
 const path = require("path");
-const moment = require("moment-timezone");
 const {
   groupCache,
   getGroupMetadata,

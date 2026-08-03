@@ -1,4 +1,3 @@
-const moment = require("moment-timezone");
 const { getSetting } = require("../database/settings");
 const { getGroupSetting } = require("../database/groupSettings");
 const { getSudoNumbers } = require("../database/sudo");
@@ -170,8 +169,33 @@ const setupGroupEventsListeners = (Gifted) => {
                 (await getSetting("FOOTER")) || "Powered by ᴍᴀғɪᴀ ɪᴍᴀᴅ";
             const newsletterJid = (await getSetting("NEWSLETTER_JID")) || "";
 
-            const currentTime = moment().tz(timeZone).format("h:mm A");
-            const currentDate = moment().tz(timeZone).format("MMMM Do, YYYY");
+            const now = new Date();
+            const timeFormatter = new Intl.DateTimeFormat("en-US", {
+                timeZone: timeZone,
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            });
+            const dateFormatter = new Intl.DateTimeFormat("en-US", {
+                timeZone: timeZone,
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
+            const currentTime = timeFormatter.format(now);
+            const parts = dateFormatter.formatToParts(now);
+            const monthPart = parts.find(p => p.type === "month")?.value || "";
+            const dayPart = parts.find(p => p.type === "day")?.value || "";
+            const yearPart = parts.find(p => p.type === "year")?.value || "";
+            const getDaySuffix = (day) => {
+                if (day >= 11 && day <= 13) return "th";
+                const lastDigit = day % 10;
+                if (lastDigit === 1) return "st";
+                if (lastDigit === 2) return "nd";
+                if (lastDigit === 3) return "rd";
+                return "th";
+            };
+            const currentDate = `${monthPart} ${dayPart}${getDaySuffix(parseInt(dayPart))}, ${yearPart}`;
 
             const groupMeta = await getFreshGroupMetadata(Gifted, groupJid);
             if (!groupMeta) return;
